@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  background: #fff8ec;
+}
+
+.dark {
+  color-scheme: dark;
+  background: #15110f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(255, 122, 26, 0.16), transparent 26%),
+    radial-gradient(circle at 88% 6%, rgba(119, 205, 255, 0.28), transparent 28%),
+    radial-gradient(circle at 75% 85%, rgba(180, 138, 255, 0.18), transparent 28%),
+    #fff8ec;
+  color: #211a17;
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(255, 122, 26, 0.18), transparent 26%),
+    radial-gradient(circle at 90% 10%, rgba(86, 159, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 52% 92%, rgba(158, 112, 255, 0.14), transparent 28%),
+    #15110f;
+  color: #fff8ec;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: #ff7a1a;
+  color: white;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding-bottom: 7rem;
+}
+
+.premium-grid {
+  background-image:
+    linear-gradient(rgba(255, 122, 26, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 122, 26, 0.08) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+.dark .premium-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+  overflow: hidden;
+  contain: paint;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+@media (min-width: 768px) {
+  .app-shell {
+    padding-bottom: 0;
+  }
+}
