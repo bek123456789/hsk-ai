@@ -20,6 +20,7 @@ import { hskVocabulary } from "../data/hskVocabulary";
 import { hskWords } from "../data/hskWords";
 import type { ExamAttempt, HSKLevel } from "../types";
 import { isLevelUnlocked } from "../utils/hskUnlock";
+import { isLessonUnlocked } from "../utils/lessonUnlock";
 
 const levels: HSKLevel[] = [1, 2, 3, 4, 5, 6];
 const chineseRegex = /[\u3400-\u9fff]/;
@@ -388,6 +389,40 @@ if (isLevelUnlocked(2, { knownWordIds: [] }, [])) errors.push("Unlock: HSK 2 nat
 if (isLevelUnlocked(2, { knownWordIds: [] }, [unlockAttempt(79)])) errors.push("Unlock: HSK 2 79% bilan ochilib ketmoqda");
 if (!isLevelUnlocked(2, { knownWordIds: [] }, [unlockAttempt(80)])) errors.push("Unlock: HSK 2 80% bilan ochilmadi");
 
+const hsk1OrderedLessons = hskLessonCurriculum.filter((lesson) => lesson.level === 1).sort((first, second) => first.order - second.order);
+const hsk2OrderedLessons = hskLessonCurriculum.filter((lesson) => lesson.level === 2).sort((first, second) => first.order - second.order);
+const hsk1First = hsk1OrderedLessons[0];
+const hsk1Second = hsk1OrderedLessons[1];
+const hsk2First = hsk2OrderedLessons[0];
+
+if (hsk1First && !isLessonUnlocked(1, hsk1First.id, { knownWordIds: [], lessonProgress: {} }, [])) {
+  errors.push("Lesson unlock: yangi foydalanuvchida HSK 1 birinchi dars ochilmadi");
+}
+if (hsk1Second && isLessonUnlocked(1, hsk1Second.id, { knownWordIds: [], lessonProgress: {} }, [])) {
+  errors.push("Lesson unlock: yangi foydalanuvchida HSK 1 ikkinchi dars ochilib ketmoqda");
+}
+if (hsk1First && hsk1Second && !isLessonUnlocked(1, hsk1Second.id, {
+  knownWordIds: [],
+  lessonProgress: {
+    [hsk1First.id]: {
+      lessonId: hsk1First.id,
+      completedSections: [],
+      quizScore: 0,
+      quizTotal: 0,
+      markedDone: true,
+      updatedAt: new Date(0).toISOString()
+    }
+  }
+}, [])) {
+  errors.push("Lesson unlock: HSK 1 birinchi dars tugagandan keyin ikkinchi dars ochilmadi");
+}
+if (hsk2First && isLessonUnlocked(2, hsk2First.id, { knownWordIds: [], lessonProgress: {} }, [])) {
+  errors.push("Lesson unlock: HSK 2 birinchi dars HSK 1 imtihonisiz ochilib ketmoqda");
+}
+if (hsk2First && !isLessonUnlocked(2, hsk2First.id, { knownWordIds: [], lessonProgress: {} }, [unlockAttempt(80)])) {
+  errors.push("Lesson unlock: HSK 1 imtihoni 80% bo‘lganda HSK 2 birinchi dars ochilmadi");
+}
+
 function reportRepeatedLessonReference(kind: "reading" | "listening" | "speaking", ids: string[], maximum: number) {
   const counts = new Map<string, number>();
   for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
@@ -433,7 +468,7 @@ console.log("- exam sections:", Object.fromEntries(levels.map((level) => [
       : section.prompts.length
   ]))
 ])));
-console.log("- unlock logic: HSK 2 yopiq <80%, ochiq >=80%");
+console.log("- unlock logic: HSK 2 yopiq <80%, ochiq >=80%; darslar ketma-ket ochiladi");
 console.log("- lessons:", countByLevel(hskLessonCurriculum));
 console.log("- average words per lesson:", Object.fromEntries(levels.map((level) => {
   const lessons = hskLessonCurriculum.filter((item) => item.level === level);

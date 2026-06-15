@@ -50,6 +50,7 @@ export type AuthUser = {
   id: string;
   name: string;
   email: string;
+  avatarUrl?: string | null;
   currentHSKLevel: HSKLevel;
   createdAt: string;
   premium: boolean;

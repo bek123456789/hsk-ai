@@ -1,5 +1,6 @@
 import type { ExamAttempt, HSKLevel, MistakeRecord } from "@/types";
-import { getUnlockedHskLevels } from "@/utils/hskUnlock";
+import { getBestExamScore, getUnlockedHskLevels, HSK_PASSING_SCORE } from "@/utils/hskUnlock";
+import { getCurrentAvailableLesson, getLevelCompletionStatus } from "@/utils/lessonUnlock";
 
 type ProgressLike = {
   knownWordIds?: string[];
@@ -16,13 +17,31 @@ export function generateDailyStudyPlan(userProgress: ProgressLike, weakWords: st
   const focusSkill = getRecommendedNextAction({ ...userProgress, mistakes, recentExam });
   const unlockedLevels = getUnlockedHskLevels({ knownWordIds: userProgress.knownWordIds ?? [] }, examResults);
   const requestedLevel = userProgress.currentLevel ?? 1;
-  const level = unlockedLevels.includes(requestedLevel) ? requestedLevel : unlockedLevels.at(-1) ?? 1;
+  const level = (unlockedLevels.includes(requestedLevel) ? requestedLevel : unlockedLevels.at(-1) ?? 1) as HSKLevel;
+  const currentLesson = getCurrentAvailableLesson(level, { knownWordIds: userProgress.knownWordIds ?? [] });
+  const levelStatus = getLevelCompletionStatus(level, { knownWordIds: userProgress.knownWordIds ?? [] });
+  const examPassed = getBestExamScore(level, examResults) >= HSK_PASSING_SCORE;
+  const lessonHref = currentLesson
+    ? `/lesson/${level}/${currentLesson.id}`
+    : examPassed && level < 6
+      ? `/lesson/${(level + 1) as HSKLevel}`
+      : `/exam/${level}`;
+  const lessonTitleUz = currentLesson
+    ? "Joriy darsni davom ettiring"
+    : examPassed && level < 6
+      ? "Keyingi HSK darajasini boshlang"
+      : "HSK imtihonini topshiring";
+  const lessonTitleRu = currentLesson
+    ? "Продолжите текущий урок"
+    : examPassed && level < 6
+      ? "Начните следующий уровень HSK"
+      : "Сдайте экзамен HSK";
 
   return {
     completion: Math.min(100, Math.round((learnedCount % 10) * 10)),
-    estimatedMinutes: recentExam && (recentExam.overallScore ?? recentExam.accuracy) < 80 ? 28 : 20,
+    estimatedMinutes: levelStatus.allCompleted ? 28 : recentExam && (recentExam.overallScore ?? recentExam.accuracy) < 80 ? 28 : 20,
     tasks: [
-      { id: "lesson", titleUz: "Keyingi darsni davom ettiring", titleRu: "Продолжите следующий урок", href: `/lesson/${level}` },
+      { id: "lesson", titleUz: lessonTitleUz, titleRu: lessonTitleRu, href: lessonHref },
       { id: "review", titleUz: `${weakCount} ta zaif so‘zni takrorlang`, titleRu: `Повторите ${weakCount} слабых слов`, href: "/review" },
       { id: "reading", titleUz: "1 ta o‘qish mashqini bajaring", titleRu: "Выполните 1 задание по чтению", href: `/reading/${level}` },
       { id: "listening", titleUz: "1 ta tinglash mashq qiling", titleRu: "Выполните 1 задание по аудированию", href: `/listening/${level}` },

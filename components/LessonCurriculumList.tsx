@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, BookOpen, Clock3, Headphones, Lock, MessageCircle, Search, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, Clock3, Headphones, Lock, MessageCircle, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AppButton } from "@/components/AppButton";
 import { ProgressRing } from "@/components/ProgressRing";
@@ -9,9 +9,10 @@ import { useAuthStore } from "@/store/authStore";
 import { useProgressStore } from "@/store/progressStore";
 import type { HSKLevel } from "@/types";
 import { useI18n } from "@/utils/i18n";
-import { calculateLessonProgress } from "@/utils/lessonPlanner";
+import { calculateLessonProgress, getAllLessonProgressRecords } from "@/utils/lessonPlanner";
 import { isPremiumProfile } from "@/utils/premium";
 import { getLevelLockReason, isLevelUnlocked } from "@/utils/hskUnlock";
+import { getLessonLockReason, isLessonCompleted, isLessonUnlocked } from "@/utils/lessonUnlock";
 
 const levels: HSKLevel[] = [1, 2, 3, 4, 5, 6];
 
@@ -24,6 +25,7 @@ export function LessonCurriculumList({ levelOnly }: { levelOnly?: HSKLevel }) {
   const [query, setQuery] = useState("");
   const [skill, setSkill] = useState("all");
   const premium = isPremiumProfile(user);
+  const lessonProgress = mounted ? getAllLessonProgressRecords() : {};
 
   useEffect(() => setMounted(true), []);
 
@@ -89,23 +91,37 @@ export function LessonCurriculumList({ levelOnly }: { levelOnly?: HSKLevel }) {
             ) : null}
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {group.lessons.map((lesson) => {
-                const progressionLocked = !isLevelUnlocked(group.level, { knownWordIds }, examAttempts);
+                const levelLocked = !isLevelUnlocked(group.level, { knownWordIds }, examAttempts);
+                const sequenceUnlocked = mounted && isLessonUnlocked(group.level, lesson.id, { knownWordIds, lessonProgress }, examAttempts);
+                const completed = mounted && isLessonCompleted(group.level, lesson.id, { knownWordIds, lessonProgress });
+                const progressionLocked = levelLocked || !sequenceUnlocked;
                 const premiumLocked = lesson.isPremium && !premium;
                 const locked = progressionLocked || premiumLocked;
                 const progress = mounted ? calculateLessonProgress(lesson, knownWordIds) : 0;
+                const lockReason = progressionLocked
+                  ? getLessonLockReason(group.level, lesson.id, { knownWordIds, lessonProgress }, examAttempts, language)
+                  : premiumLocked
+                    ? (language === "ru" ? "Эта функция доступна в Premium." : "Bu funksiya Premium uchun.")
+                    : "";
                 return (
                   <article key={lesson.id} className="relative overflow-hidden rounded-[2rem] border border-white/80 bg-white/90 p-6 shadow-premium transition hover:-translate-y-1">
                     <div className="absolute right-0 top-0 h-28 w-28 rounded-bl-[5rem] bg-orange-soft/70" />
                     <div className="relative">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-soft text-orange-deep shadow-soft">
-                          {locked ? <Lock className="h-6 w-6" /> : <BookOpen className="h-6 w-6" />}
+                          {completed ? <CheckCircle2 className="h-6 w-6" /> : locked ? <Lock className="h-6 w-6" /> : <BookOpen className="h-6 w-6" />}
                         </div>
                         <ProgressRing value={progress} size={78} />
                       </div>
                       <p className="mt-5 text-xs font-black uppercase tracking-normal text-orange-deep">HSK {lesson.level} · {lesson.order}</p>
                       <h3 className="mt-2 text-2xl font-black leading-tight text-ink">{language === "ru" ? lesson.titleRu : lesson.titleUz}</h3>
                       <p className="mt-3 min-h-16 text-sm font-semibold leading-6 text-stone-600">{language === "ru" ? lesson.descriptionRu : lesson.descriptionUz}</p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <span className={`rounded-full px-3 py-2 text-xs font-black ${completed ? "bg-emerald-50 text-emerald-700" : locked ? "bg-stone-100 text-stone-500" : "bg-orange-soft text-orange-deep"}`}>
+                          {completed ? (language === "ru" ? "Завершено" : "Yakunlandi") : locked ? (language === "ru" ? "Закрыто" : "Yopiq") : (progress > 0 ? (language === "ru" ? "Продолжить" : "Davom etish") : (language === "ru" ? "Открыто" : "Ochiq"))}
+                        </span>
+                        {!locked && !completed ? <span className="rounded-full bg-cream px-3 py-2 text-xs font-black text-stone-500">{language === "ru" ? "Уроки открываются по порядку" : "Darslar ketma-ket ochiladi"}</span> : null}
+                      </div>
                       <div className="mt-5 flex flex-wrap gap-2 text-xs font-black text-stone-600">
                         <span className="rounded-full bg-cream px-3 py-2">{lesson.vocabularyIds.length} {language === "ru" ? "слов" : "so‘z"}</span>
                         <span className="rounded-full bg-cream px-3 py-2">{lesson.grammarIds.length} {language === "ru" ? "грамматика" : "grammatika"}</span>
@@ -117,14 +133,18 @@ export function LessonCurriculumList({ levelOnly }: { levelOnly?: HSKLevel }) {
                         <span className="inline-flex items-center gap-2"><Clock3 className="h-4 w-4 text-orange-brand" /> {lesson.estimatedMinutes} {language === "ru" ? "мин" : "daq"}</span>
                         <span>{progress}%</span>
                       </div>
-                      <AppButton href={progressionLocked ? `/exam/${Math.max(1, lesson.level - 1)}` : premiumLocked ? "/premium" : `/lesson/${lesson.level}/${lesson.id}`} className="mt-5 w-full" variant={locked ? "secondary" : "primary"}>
-                        {progressionLocked
-                          ? (language === "ru" ? "Сначала предыдущий экзамен" : "Avval oldingi imtihon")
-                          : premiumLocked
-                            ? (language === "ru" ? "Нужен Premium" : "Premium kerak")
-                            : progress > 0 ? (language === "ru" ? "Продолжить" : "Davom etish") : (language === "ru" ? "Начать урок" : "Darsni boshlash")}
-                        {locked ? <Sparkles className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
-                      </AppButton>
+                      {lockReason ? <p className="mt-4 rounded-2xl bg-cream px-4 py-3 text-xs font-bold leading-5 text-stone-600">{lockReason}</p> : null}
+                      {locked ? (
+                        <AppButton disabled className="mt-5 w-full" variant="secondary">
+                          {premiumLocked && !progressionLocked ? (language === "ru" ? "Нужен Premium" : "Premium kerak") : (language === "ru" ? "Закрыто" : "Yopiq")}
+                          <Lock className="h-4 w-4" />
+                        </AppButton>
+                      ) : (
+                        <AppButton href={`/lesson/${lesson.level}/${lesson.id}`} className="mt-5 w-full" variant={completed ? "secondary" : "primary"}>
+                          {completed ? (language === "ru" ? "Повторить урок" : "Darsni qaytarish") : progress > 0 ? (language === "ru" ? "Продолжить" : "Davom etish") : (language === "ru" ? "Начать урок" : "Darsni boshlash")}
+                          <ArrowRight className="h-4 w-4" />
+                        </AppButton>
+                      )}
                     </div>
                   </article>
                 );

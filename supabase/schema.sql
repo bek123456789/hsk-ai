@@ -4,6 +4,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   name text,
+  avatar_url text,
   current_hsk_level int default 1,
   preferred_language text default 'uz',
   premium boolean default false,
@@ -19,6 +20,7 @@ create table if not exists public.profiles (
 );
 
 alter table public.profiles add column if not exists stripe_customer_id text;
+alter table public.profiles add column if not exists avatar_url text;
 alter table public.profiles add column if not exists stripe_subscription_id text;
 alter table public.profiles add column if not exists subscription_status text default 'free';
 alter table public.profiles add column if not exists subscription_plan text;
@@ -46,11 +48,12 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, name, current_hsk_level, preferred_language, premium, onboarding_completed)
+  insert into public.profiles (id, email, name, avatar_url, current_hsk_level, preferred_language, premium, onboarding_completed)
   values (
     new.id,
     new.email,
-    coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+    coalesce(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture'),
     1,
     'uz',
     false,
@@ -59,6 +62,7 @@ begin
   on conflict (id) do update set
     email = excluded.email,
     name = coalesce(excluded.name, public.profiles.name),
+    avatar_url = coalesce(excluded.avatar_url, public.profiles.avatar_url),
     updated_at = now();
 
   return new;

@@ -33,9 +33,10 @@ import { useAuthStore } from "@/store/authStore";
 import { useProgressStore } from "@/store/progressStore";
 import type { AppLanguage, HSKLevel } from "@/types";
 import { useI18n } from "@/utils/i18n";
-import { calculateLessonProgress, getNextLesson } from "@/utils/lessonPlanner";
+import { calculateLessonProgress, getAllLessonProgressRecords } from "@/utils/lessonPlanner";
 import { isPremiumProfile } from "@/utils/premium";
-import { getUnlockedHskLevels } from "@/utils/hskUnlock";
+import { getBestExamScore, getUnlockedHskLevels, HSK_PASSING_SCORE } from "@/utils/hskUnlock";
+import { getCurrentAvailableLesson, getLevelCompletionStatus } from "@/utils/lessonUnlock";
 
 type LocalizedText = {
   uz: string;
@@ -150,16 +151,26 @@ export default function DashboardPage() {
 
   const unlockedLevels = getUnlockedHskLevels({ knownWordIds }, examAttempts);
   const requestedLevel = (user?.currentHSKLevel ?? storeCurrentLevel ?? 1) as HSKLevel;
-  const currentLevel = (unlockedLevels.includes(requestedLevel) ? requestedLevel : unlockedLevels.at(-1) ?? 1) as HSKLevel;
+  const baseLevel = (unlockedLevels.includes(requestedLevel) ? requestedLevel : unlockedLevels.at(-1) ?? 1) as HSKLevel;
+  const highestUnlockedLevel = (unlockedLevels.at(-1) ?? 1) as HSKLevel;
+  const currentLevel = highestUnlockedLevel > baseLevel ? highestUnlockedLevel : baseLevel;
   const lessons = useMemo(() => getCurriculumLessonsByLevel(currentLevel), [currentLevel]);
+  const allLessonProgress = mounted ? getAllLessonProgressRecords() : {};
   const levelWords = useMemo(() => vocabularyEntries.filter((word) => word.level === currentLevel), [currentLevel]);
   const learnedLevelWords = levelWords.filter((word) => knownWordIds.includes(word.id)).length;
   const vocabularyProgress = Math.round((learnedLevelWords / Math.max(1, levelWords.length)) * 100);
-  const completedLessons = mounted ? lessons.filter((lesson) => calculateLessonProgress(lesson, knownWordIds) === 100).length : 0;
-  const lessonProgress = Math.round((completedLessons / Math.max(1, lessons.length)) * 100);
-  const nextLesson = mounted ? getNextLesson(lessons, knownWordIds) : lessons[0];
+  const levelStatus = mounted ? getLevelCompletionStatus(currentLevel, { knownWordIds, lessonProgress: allLessonProgress }) : { total: lessons.length, completed: 0, allCompleted: false, currentLesson: lessons[0] ?? null, progressPercent: 0 };
+  const completedLessons = levelStatus.completed;
+  const lessonProgress = levelStatus.progressPercent;
+  const nextLesson = mounted ? getCurrentAvailableLesson(currentLevel, { knownWordIds, lessonProgress: allLessonProgress }) : lessons[0];
   const nextLessonProgress = mounted && nextLesson ? calculateLessonProgress(nextLesson, knownWordIds) : 0;
-  const nextLessonHref = nextLesson ? `/lesson/${currentLevel}/${nextLesson.id}` : `/lessons/${currentLevel}`;
+  const currentExamPassed = getBestExamScore(currentLevel, examAttempts) >= HSK_PASSING_SCORE;
+  const nextLevel = currentLevel < 6 ? ((currentLevel + 1) as HSKLevel) : currentLevel;
+  const nextLessonHref = nextLesson
+    ? `/lesson/${currentLevel}/${nextLesson.id}`
+    : currentExamPassed && currentLevel < 6
+      ? `/lesson/${nextLevel}/${getCurriculumLessonsByLevel(nextLevel)[0]?.id ?? ""}`
+      : `/exam/${currentLevel}`;
   const nextLessonWords = nextLesson?.vocabularyIds.filter((id) => !knownWordIds.includes(id)).length ?? 0;
   const todayKey = getLocalDateKey();
   const completedTasks = dailyPlanCompletions?.[todayKey] ?? [];
@@ -291,7 +302,11 @@ export default function DashboardPage() {
                       {language === "ru" ? "Следующий урок" : "Keyingi dars"}
                     </p>
                     <p className="mt-1 truncate text-base font-black text-ink">
-                      {nextLesson ? (language === "ru" ? nextLesson.titleRu : nextLesson.titleUz) : `HSK ${currentLevel}`}
+                      {nextLesson
+                        ? (language === "ru" ? nextLesson.titleRu : nextLesson.titleUz)
+                        : currentExamPassed && currentLevel < 6
+                          ? `HSK ${nextLevel} · ${language === "ru" ? "первый урок" : "birinchi dars"}`
+                          : (language === "ru" ? "Экзамен открыт" : "Imtihon ochildi")}
                     </p>
                   </div>
                   <span className="shrink-0 text-sm font-black text-orange-deep">{nextLessonProgress}%</span>
@@ -306,7 +321,11 @@ export default function DashboardPage() {
 
               <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
                 <AppButton href={nextLessonHref} className="min-h-11 px-5 py-3">
-                  {nextLessonProgress > 0
+                  {!nextLesson
+                    ? currentExamPassed && currentLevel < 6
+                      ? (language === "ru" ? "Следующий уровень" : "Keyingi daraja")
+                      : (language === "ru" ? "Начать экзамен" : "Imtihonni boshlash")
+                    : nextLessonProgress > 0
                     ? language === "ru"
                       ? "Продолжить урок"
                       : "Darsni davom ettirish"
@@ -395,10 +414,14 @@ export default function DashboardPage() {
             <Card className="p-5 sm:p-6">
               <DashboardHeading
                 eyebrow={language === "ru" ? "Продолжить обучение" : "O‘qishni davom ettirish"}
-                title={nextLesson ? (language === "ru" ? nextLesson.titleRu : nextLesson.titleUz) : `HSK ${currentLevel}`}
+                title={nextLesson ? (language === "ru" ? nextLesson.titleRu : nextLesson.titleUz) : currentExamPassed && currentLevel < 6 ? `HSK ${nextLevel}` : (language === "ru" ? "Экзамен" : "Imtihon")}
               />
               <p className="text-sm font-semibold leading-6 text-stone-600">
-                {nextLesson ? (language === "ru" ? nextLesson.descriptionRu : nextLesson.descriptionUz) : ""}
+                {nextLesson
+                  ? (language === "ru" ? nextLesson.descriptionRu : nextLesson.descriptionUz)
+                  : currentExamPassed && currentLevel < 6
+                    ? (language === "ru" ? "Следующий уровень открыт. Начните первый урок." : "Keyingi daraja ochildi. Birinchi darsni boshlang.")
+                    : (language === "ru" ? "Все уроки завершены. Теперь сдайте экзамен." : "Barcha darslar yakunlandi. Endi imtihonni topshiring.")}
               </p>
               <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-stone-600">
                 <span className="rounded-full bg-cream px-3 py-2">{nextLesson?.vocabularyIds.length ?? 0} {language === "ru" ? "слов" : "so‘z"}</span>

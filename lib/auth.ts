@@ -16,6 +16,7 @@ type ProfileRow = {
   stripe_price_id?: string | null;
   current_period_end?: string | null;
   premium_until?: string | null;
+  avatar_url?: string | null;
   trial_started_at?: string | null;
   trial_ends_at?: string | null;
   trial_used?: boolean | null;
@@ -51,6 +52,7 @@ function toAuthUser(profile: ProfileRow, fallbackEmail: string): AuthUser {
     id: profile.id,
     email: profile.email ?? fallbackEmail,
     name: profile.name ?? fallbackEmail.split("@")[0] ?? "HanziFlow AI",
+    avatarUrl: profile.avatar_url ?? null,
     currentHSKLevel: ((profile.current_hsk_level ?? 1) as HSKLevel),
     createdAt: profile.created_at ?? new Date().toISOString(),
     premium: isPremiumProfile(profile),
@@ -71,6 +73,33 @@ function toAuthUser(profile: ProfileRow, fallbackEmail: string): AuthUser {
     referredBy: profile.referred_by ?? null,
     referralBonusDays: profile.referral_bonus_days ?? 0
   };
+}
+
+function getMetadataText(metadata: Record<string, unknown> | undefined, keys: string[]) {
+  for (const key of keys) {
+    const value = metadata?.[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return null;
+}
+
+async function updateOptionalGoogleProfileFields(input: { id: string; name?: string | null; avatarUrl?: string | null }) {
+  const supabase = getSupabaseBrowserClient();
+
+  if (input.name) {
+    await supabase
+      .from("profiles")
+      .update({ name: input.name, updated_at: new Date().toISOString() })
+      .eq("id", input.id)
+      .or("name.is.null,name.eq.");
+  }
+
+  if (input.avatarUrl) {
+    await supabase
+      .from("profiles")
+      .update({ avatar_url: input.avatarUrl, updated_at: new Date().toISOString() })
+      .eq("id", input.id);
+  }
 }
 
 export async function upsertProfile(input: { id: string; email: string; name: string; preferredLanguage?: AppLanguage }) {
@@ -104,11 +133,34 @@ export async function getCurrentUserProfile() {
   if (error) throw new Error(supabaseErrorMessage(error));
 
   if (!data) {
-    return upsertProfile({
+    const created = await upsertProfile({
       id: user.id,
       email: user.email,
-      name: user.user_metadata?.name ?? user.email.split("@")[0] ?? "HanziFlow AI"
+      name: getMetadataText(user.user_metadata, ["full_name", "name"]) ?? user.email.split("@")[0] ?? "HanziFlow AI"
     });
+    const metadataAvatar = getMetadataText(user.user_metadata, ["avatar_url", "picture"]);
+    if (metadataAvatar) {
+      try {
+        await updateOptionalGoogleProfileFields({ id: user.id, avatarUrl: metadataAvatar });
+        const { data: refreshed } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+        if (refreshed) return toAuthUser(refreshed as ProfileRow, user.email);
+      } catch {
+        return created;
+      }
+    }
+    return created;
+  }
+
+  const metadataName = getMetadataText(user.user_metadata, ["full_name", "name"]);
+  const metadataAvatar = getMetadataText(user.user_metadata, ["avatar_url", "picture"]);
+  if ((!data.name && metadataName) || metadataAvatar) {
+    try {
+      await updateOptionalGoogleProfileFields({ id: user.id, name: metadataName, avatarUrl: metadataAvatar });
+      const { data: refreshed } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      if (refreshed) return toAuthUser(refreshed as ProfileRow, user.email);
+    } catch {
+      // Optional OAuth metadata columns may not exist yet; profile loading must still work.
+    }
   }
 
   return toAuthUser(data as ProfileRow, user.email);
@@ -180,6 +232,25 @@ export async function loginWithSupabase(input: { email: string; password: string
   if (!profile) throw new Error("Sessiya topilmadi.");
 
   return profile;
+}
+
+export async function signInWithGoogle(nextPath: string) {
+  const supabase = getSupabaseBrowserClient();
+  const redirectTo = typeof window !== "undefined"
+    ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+    : undefined;
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo,
+      queryParams: {
+        prompt: "select_account"
+      }
+    }
+  });
+
+  if (error) throw new Error(supabaseErrorMessage(error));
 }
 
 export async function logoutFromSupabase() {

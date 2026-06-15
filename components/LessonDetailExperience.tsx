@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, BookOpen, Check, CheckCircle2, Clock3, Headphones, MessageCircle, Play, RotateCcw, Sparkles, Volume2 } from "lucide-react";
+import { ArrowRight, BookOpen, Check, CheckCircle2, Clock3, Headphones, Lock, MessageCircle, Play, RotateCcw, Sparkles, Trophy, Volume2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AppButton } from "@/components/AppButton";
 import { PremiumLock } from "@/components/PremiumLock";
@@ -8,7 +8,7 @@ import { SpeakingRetellTask } from "@/components/SpeakingRetellTask";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageShell } from "@/components/ui/PageShell";
 import { hskCentralGrammar } from "@/data/hsk/grammar";
-import { getCurriculumLessonsByLevel, type HSKLessonCurriculum } from "@/data/hsk/lessonCurriculum";
+import { type HSKLessonCurriculum } from "@/data/hsk/lessonCurriculum";
 import { hskListeningContent } from "@/data/hsk/listening";
 import { hskQuizQuestions } from "@/data/hsk/quizQuestions";
 import { hskReadingContent } from "@/data/hsk/reading";
@@ -18,6 +18,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useProgressStore } from "@/store/progressStore";
 import { useI18n } from "@/utils/i18n";
 import { calculateLessonProgress, getLessonCompletionState, getLessonProgressRecord, markLessonDone, saveLessonQuiz, saveLessonSection } from "@/utils/lessonPlanner";
+import { getLessonLockReason, getNextLesson as getSequentialNextLesson, getPreviousLesson, isLessonUnlocked } from "@/utils/lessonUnlock";
 import { saveLearningProgress } from "@/utils/learningProgress";
 import { isPremiumProfile } from "@/utils/premium";
 import { speakChinese } from "@/utils/speechSynthesis";
@@ -34,6 +35,7 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
   const knownWordIds = useProgressStore((state) => state.knownWordIds);
   const markKnown = useProgressStore((state) => state.markKnown);
   const markWeak = useProgressStore((state) => state.markWeak);
+  const examAttempts = useProgressStore((state) => state.examAttempts);
   const [version, setVersion] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [showReadingPinyin, setShowReadingPinyin] = useState(false);
@@ -59,7 +61,11 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
   const progress = mounted ? calculateLessonProgress(lesson, knownWordIds) : 0;
   const record = mounted ? getLessonProgressRecord(lesson.id) : null;
   const completion = mounted ? getLessonCompletionState(lesson, knownWordIds) : null;
-  const nextLesson = getCurriculumLessonsByLevel(lesson.level).find((item) => item.order === lesson.order + 1);
+  const lessonUnlocked = mounted ? isLessonUnlocked(lesson.level, lesson.id, { knownWordIds }, examAttempts) : true;
+  const lockReason = mounted ? getLessonLockReason(lesson.level, lesson.id, { knownWordIds }, examAttempts, language) : "";
+  const requiredPreviousLesson = getPreviousLesson(lesson.level, lesson.id);
+  const nextLesson = getSequentialNextLesson(lesson.level, lesson.id);
+  const nextLessonUnlocked = mounted && nextLesson ? isLessonUnlocked(lesson.level, nextLesson.id, { knownWordIds }, examAttempts) : false;
 
   function refresh() {
     setVersion((value) => value + 1);
@@ -95,6 +101,37 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
     saveLessonQuiz(lesson.id, score, quiz.length);
     setQuizSubmitted(true);
     refresh();
+  }
+
+  if (mounted && !lessonUnlocked) {
+    return (
+      <PageShell className="max-w-3xl">
+        <div className="rounded-[2.2rem] border border-orange-soft/70 bg-white/92 p-7 text-center shadow-premium sm:p-10">
+          <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.7rem] bg-orange-soft text-orange-deep">
+            <Lock className="h-9 w-9" />
+          </span>
+          <p className="mt-5 text-sm font-black text-orange-deep">HSK {lesson.level} · {lesson.order}</p>
+          <h1 className="mt-2 text-4xl font-black text-ink">{language === "ru" ? "Этот урок пока закрыт" : "Bu dars hali yopiq"}</h1>
+          <p className="mx-auto mt-4 max-w-xl text-base font-semibold leading-7 text-stone-600">
+            {lockReason || (language === "ru" ? "Уроки открываются по порядку." : "Darslar ketma-ket ochiladi.")}
+          </p>
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            {requiredPreviousLesson ? (
+              <AppButton href={`/lesson/${lesson.level}/${requiredPreviousLesson.id}`} variant="primary">
+                <ArrowRight className="h-4 w-4" /> {language === "ru" ? "Предыдущий урок" : "Oldingi dars"}
+              </AppButton>
+            ) : (
+              <AppButton href={`/exam/${Math.max(1, lesson.level - 1)}`} variant="primary">
+                <Trophy className="h-4 w-4" /> {language === "ru" ? "Посмотреть экзамен" : "Imtihonni ko‘rish"}
+              </AppButton>
+            )}
+            <AppButton href={`/lessons/${lesson.level}`} variant="secondary">
+              {language === "ru" ? "К списку уроков" : "Darslar ro‘yxati"}
+            </AppButton>
+          </div>
+        </div>
+      </PageShell>
+    );
   }
 
   if (lesson.isPremium && !isPremiumProfile(user)) {
@@ -216,7 +253,11 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
           <div><p className="text-sm font-black text-white/80">{progress}%</p><h2 className="mt-1 text-3xl font-black">{record?.markedDone ? (language === "ru" ? "Урок завершён" : "Dars yakunlandi") : (language === "ru" ? "Завершить урок" : "Darsni yakunlash")}</h2><p className="mt-2 max-w-2xl font-semibold text-white/85">{language === "ru" ? "Завершите основные разделы и отметьте урок выполненным." : "Asosiy bo‘limlarni tugatib, darsni yakunlangan deb belgilang."}</p></div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => { markLessonDone(lesson.id); refresh(); }} disabled={!completion?.ready || record?.markedDone} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-orange-deep disabled:opacity-50"><CheckCircle2 className="h-5 w-5" /> {language === "ru" ? "Урок завершён" : "Dars yakunlandi"}</button>
-            {nextLesson ? <AppButton href={`/lesson/${lesson.level}/${nextLesson.id}`} variant="secondary">{language === "ru" ? "Следующий урок" : "Keyingi dars"} <ArrowRight className="h-4 w-4" /></AppButton> : <AppButton href={`/lesson/${lesson.level}`} variant="secondary"><RotateCcw className="h-4 w-4" /> {language === "ru" ? "К списку уроков" : "Darslar ro‘yxati"}</AppButton>}
+            {nextLesson && nextLessonUnlocked ? (
+              <AppButton href={`/lesson/${lesson.level}/${nextLesson.id}`} variant="secondary">{language === "ru" ? "Следующий урок открыт" : "Keyingi dars ochildi"} <ArrowRight className="h-4 w-4" /></AppButton>
+            ) : nextLesson ? (
+              <AppButton disabled variant="secondary"><Lock className="h-4 w-4" /> {language === "ru" ? "Следующий урок закрыт" : "Keyingi dars yopiq"}</AppButton>
+            ) : <AppButton href={`/lesson/${lesson.level}`} variant="secondary"><RotateCcw className="h-4 w-4" /> {language === "ru" ? "К списку уроков" : "Darslar ro‘yxati"}</AppButton>}
           </div>
         </div>
       </section>

@@ -4,7 +4,9 @@ import { ArrowRight, KeyRound, Loader2, Mail, UserRound } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { AppButton } from "@/components/AppButton";
+import { signInWithGoogle } from "@/lib/auth";
 import { useAuthStore } from "@/store/authStore";
+import { getSafeNextPath } from "@/utils/authRedirect";
 import { useI18n } from "@/utils/i18n";
 
 function getErrorMessage(caught: unknown, fallback: string, translate: (key: keyof typeof import("@/locales/uz.json")) => string) {
@@ -42,6 +44,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "forgot" }) {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
 
   useEffect(() => {
     const referralCode = searchParams.get("ref");
@@ -49,10 +52,28 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "forgot" }) {
   }, [searchParams]);
 
   useEffect(() => {
+    const oauthError = searchParams.get("error");
+    if (oauthError === "oauth_failed") setError(t("auth.googleCancelled"));
+  }, [searchParams, t]);
+
+  useEffect(() => {
     if (hasHydrated && user && mode !== "forgot") {
-      router.replace(user.onboardingCompleted === false ? "/onboarding" : "/dashboard");
+      const nextPath = getSafeNextPath(searchParams.get("next"), "");
+      router.replace(nextPath || (user.onboardingCompleted === false ? "/onboarding" : "/dashboard"));
     }
-  }, [hasHydrated, mode, router, user]);
+  }, [hasHydrated, mode, router, searchParams, user]);
+
+  async function loginWithGoogle() {
+    setError(null);
+    setOauthLoading(true);
+    try {
+      const nextPath = getSafeNextPath(searchParams.get("next"), mode === "register" ? "/onboarding" : "/dashboard");
+      await signInWithGoogle(nextPath);
+    } catch {
+      setOauthLoading(false);
+      setError(t("auth.googleError"));
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,7 +98,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "forgot" }) {
         await login({ email, password });
       }
 
-      router.replace(searchParams.get("next") || (mode === "register" ? "/onboarding" : "/dashboard"));
+      router.replace(getSafeNextPath(searchParams.get("next"), mode === "register" ? "/onboarding" : "/dashboard"));
     } catch (caught) {
       setError(getErrorMessage(caught, t("auth.error"), t));
     } finally {
@@ -99,7 +120,26 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "forgot" }) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <div className="space-y-4">
+      {mode !== "forgot" ? (
+        <>
+          <button
+            type="button"
+            onClick={loginWithGoogle}
+            disabled={oauthLoading || loading}
+            className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full border border-orange-soft bg-white px-5 py-3.5 text-sm font-black text-ink shadow-soft transition hover:-translate-y-0.5 hover:border-orange-brand disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {oauthLoading ? <Loader2 className="h-5 w-5 animate-spin text-orange-brand" /> : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cream text-base font-black text-orange-deep">G</span>}
+            {t("auth.googleLogin")}
+          </button>
+          <div className="flex items-center gap-3 text-xs font-black text-stone-400">
+            <span className="h-px flex-1 bg-orange-soft/70" />
+            <span>{t("auth.emailContinue")}</span>
+            <span className="h-px flex-1 bg-orange-soft/70" />
+          </div>
+        </>
+      ) : null}
+      <form onSubmit={submit} className="space-y-4">
       {mode === "register" ? (
         <label className="block">
           <span className="mb-2 block text-sm font-black text-ink">{t("auth.name")}</span>
@@ -168,6 +208,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "forgot" }) {
         {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : mode === "forgot" ? t("auth.reset") : mode === "register" ? t("auth.register") : t("auth.login")}
         {!loading ? <ArrowRight className="h-5 w-5" /> : null}
       </button>
-    </form>
+      </form>
+    </div>
   );
 }

@@ -45,7 +45,9 @@ import { useProgressStore } from "@/store/progressStore";
 import type { AppLanguage, HSKLevel } from "@/types";
 import { useI18n } from "@/utils/i18n";
 import { getLearningProgress } from "@/utils/learningProgress";
-import { calculateLessonProgress, getNextLesson } from "@/utils/lessonPlanner";
+import { calculateLessonProgress, getAllLessonProgressRecords } from "@/utils/lessonPlanner";
+import { getBestExamScore, getUnlockedHskLevels, HSK_PASSING_SCORE } from "@/utils/hskUnlock";
+import { getCurrentAvailableLesson, getLevelCompletionStatus } from "@/utils/lessonUnlock";
 import { getSubscriptionStatusLabel, isPremiumProfile } from "@/utils/premium";
 import { getSpeakingTaskProgress } from "@/utils/speakingProgress";
 
@@ -129,15 +131,20 @@ export default function ProfilePage() {
     setProfileLanguage(language);
   }, [language, user]);
 
-  const currentLevel = (user?.currentHSKLevel ?? currentStoreLevel ?? 1) as HSKLevel;
+  const unlockedLevels = getUnlockedHskLevels({ knownWordIds }, examAttempts);
+  const requestedLevel = (user?.currentHSKLevel ?? currentStoreLevel ?? 1) as HSKLevel;
+  const currentLevel = (unlockedLevels.includes(requestedLevel) ? requestedLevel : unlockedLevels.at(-1) ?? 1) as HSKLevel;
   const lessons = useMemo(() => getCurriculumLessonsByLevel(currentLevel), [currentLevel]);
+  const allLessonProgress = mounted ? getAllLessonProgressRecords() : {};
   const levelWords = useMemo(() => vocabularyEntries.filter((word) => word.level === currentLevel), [currentLevel]);
   const learnedLevelWords = levelWords.filter((word) => knownWordIds.includes(word.id)).length;
   const vocabularyProgress = Math.round((learnedLevelWords / Math.max(1, levelWords.length)) * 100);
-  const completedLessons = mounted ? lessons.filter((lesson) => calculateLessonProgress(lesson, knownWordIds) === 100).length : 0;
-  const lessonProgress = Math.round((completedLessons / Math.max(1, lessons.length)) * 100);
-  const nextLesson = mounted ? getNextLesson(lessons, knownWordIds) : lessons[0];
+  const levelStatus = mounted ? getLevelCompletionStatus(currentLevel, { knownWordIds, lessonProgress: allLessonProgress }) : { total: lessons.length, completed: 0, allCompleted: false, currentLesson: lessons[0] ?? null, progressPercent: 0 };
+  const completedLessons = levelStatus.completed;
+  const lessonProgress = levelStatus.progressPercent;
+  const nextLesson = mounted ? getCurrentAvailableLesson(currentLevel, { knownWordIds, lessonProgress: allLessonProgress }) : lessons[0];
   const nextLessonProgress = mounted && nextLesson ? calculateLessonProgress(nextLesson, knownWordIds) : 0;
+  const currentExamPassed = getBestExamScore(currentLevel, examAttempts) >= HSK_PASSING_SCORE;
   const readingDone = mounted ? getLearningProgress("reading").filter((record) => record.done && record.level === currentLevel).length : 0;
   const listeningDone = mounted ? getLearningProgress("listening").filter((record) => record.done && record.level === currentLevel).length : 0;
   const speakingDone = mounted ? getSpeakingTaskProgress().filter((record) => record.done && record.level === currentLevel).length : 0;
@@ -240,8 +247,11 @@ export default function ProfilePage() {
         <Card className="overflow-hidden border-orange-soft/80 bg-gradient-to-br from-white via-orange-50/60 to-amber-100/70 p-5 sm:p-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-[1.75rem] bg-gradient-to-br from-orange-brand to-orange-hot text-2xl font-black text-white shadow-glow">
-                {initials(user?.name)}
+              <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-orange-brand to-orange-hot text-2xl font-black text-white shadow-glow">
+                {user?.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                ) : initials(user?.name)}
                 <span className="absolute -bottom-2 -right-2 flex h-9 w-9 items-center justify-center rounded-2xl border-4 border-orange-50 bg-white text-orange-brand shadow-soft">
                   <UserRound className="h-4 w-4" />
                 </span>
@@ -359,14 +369,20 @@ export default function ProfilePage() {
             </div>
             <div className="mt-5 rounded-[1.4rem] border border-stone-200/70 bg-cream/65 p-4">
               <p className="text-xs font-black text-orange-deep">{language === "ru" ? "Следующий урок" : "Keyingi dars"}</p>
-              <p className="mt-1 text-lg font-black text-ink">{nextLesson ? (language === "ru" ? nextLesson.titleRu : nextLesson.titleUz) : `HSK ${currentLevel}`}</p>
+              <p className="mt-1 text-lg font-black text-ink">
+                {nextLesson
+                  ? (language === "ru" ? nextLesson.titleRu : nextLesson.titleUz)
+                  : currentExamPassed && currentLevel < 6
+                    ? (language === "ru" ? "Следующий уровень открыт" : "Keyingi daraja ochildi")
+                    : (language === "ru" ? "Экзамен открыт" : "Imtihon ochildi")}
+              </p>
               <div className="mt-3 flex items-center justify-between text-xs font-black text-stone-500">
                 <span>{nextLesson?.estimatedMinutes ?? 0} {language === "ru" ? "минут" : "daqiqa"}</span>
                 <span>{nextLessonProgress}%</span>
               </div>
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              <AppButton href={nextLesson ? `/lesson/${currentLevel}/${nextLesson.id}` : `/lessons/${currentLevel}`} className="min-h-11 px-4 py-3">
+              <AppButton href={nextLesson ? `/lesson/${currentLevel}/${nextLesson.id}` : `/exam/${currentLevel}`} className="min-h-11 px-4 py-3">
                 {language === "ru" ? "Продолжить" : "Davom ettirish"}
               </AppButton>
               <AppButton href="/lessons" variant="secondary" className="min-h-11 px-4 py-3">

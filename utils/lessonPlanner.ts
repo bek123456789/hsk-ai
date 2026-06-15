@@ -24,6 +24,10 @@ function readRecords(): Record<string, LessonProgressRecord> {
   }
 }
 
+export function getAllLessonProgressRecords() {
+  return readRecords();
+}
+
 function writeRecord(record: LessonProgressRecord) {
   if (typeof window === "undefined") return;
   const records = readRecords();

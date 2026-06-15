@@ -11,8 +11,9 @@ import { vocabularyEntries } from "@/data/hsk/vocabulary";
 import { useProgressStore } from "@/store/progressStore";
 import { useI18n } from "@/utils/i18n";
 import type { HSKLevel } from "@/types";
-import { isLevelUnlocked } from "@/utils/hskUnlock";
-import { calculateLessonProgress } from "@/utils/lessonPlanner";
+import { getBestExamScore, getLevelLockReason, isLevelUnlocked, HSK_PASSING_SCORE } from "@/utils/hskUnlock";
+import { getAllLessonProgressRecords } from "@/utils/lessonPlanner";
+import { getCurrentAvailableLesson, getLevelCompletionStatus } from "@/utils/lessonUnlock";
 
 export default function ProgressMapPage() {
   const { language } = useI18n();
@@ -21,6 +22,7 @@ export default function ProgressMapPage() {
   const attempts = useProgressStore((state) => state.examAttempts);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const allLessonProgress = mounted ? getAllLessonProgressRecords() : {};
   return (
     <ProtectedRoute>
       <PageShell className="max-w-6xl">
@@ -37,10 +39,27 @@ export default function ProgressMapPage() {
             const vocabularyProgress = Math.round((learned / Math.max(1, words.length)) * 100);
             const examScore = best?.[level] ?? 0;
             const lessons = getCurriculumLessonsByLevel(level);
-            const completedLessons = mounted ? lessons.filter((lesson) => calculateLessonProgress(lesson, known) === 100).length : 0;
-            const lessonProgress = Math.round((completedLessons / Math.max(1, lessons.length)) * 100);
+            const levelStatus = mounted ? getLevelCompletionStatus(level, { knownWordIds: known, lessonProgress: allLessonProgress }) : { total: lessons.length, completed: 0, allCompleted: false, currentLesson: lessons[0] ?? null, progressPercent: 0 };
+            const completedLessons = levelStatus.completed;
+            const lessonProgress = levelStatus.progressPercent;
             const readiness = Math.round(vocabularyProgress * 0.45 + lessonProgress * 0.3 + examScore * 0.25);
             const unlocked = isLevelUnlocked(level, { knownWordIds: known }, attempts);
+            const currentLesson = unlocked ? getCurrentAvailableLesson(level, { knownWordIds: known, lessonProgress: allLessonProgress }) : null;
+            const examPassed = getBestExamScore(level, attempts) >= HSK_PASSING_SCORE;
+            const href = unlocked
+              ? currentLesson
+                ? `/lesson/${level}/${currentLesson.id}`
+                : `/exam/${level}`
+              : level > 1
+                ? `/exam/${(level - 1) as HSKLevel}`
+                : `/lessons/1`;
+            const actionLabel = unlocked
+              ? currentLesson
+                ? (language === "ru" ? "Следующий урок" : "Keyingi dars")
+                : examPassed
+                  ? (language === "ru" ? "Пересдать экзамен" : "Imtihonni qayta topshirish")
+                  : (language === "ru" ? "Открыть экзамен" : "Imtihonni ochish")
+              : (language === "ru" ? "Требование" : "Talabni ko‘rish");
             return (
               <article key={level} className="rounded-[2rem] border border-orange-soft/60 bg-white/88 p-6 shadow-premium">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
@@ -53,9 +72,18 @@ export default function ProgressMapPage() {
                       <span className="flex items-center gap-2"><BookOpen className="h-4 w-4 text-orange-brand" /> {completedLessons}/{lessons.length} {language === "ru" ? "уроков" : "dars"}</span>
                       <span className="flex items-center gap-2"><Trophy className="h-4 w-4 text-orange-brand" /> {examScore}% {language === "ru" ? "экзамен" : "imtihon"}</span>
                     </div>
+                    <p className="mt-3 text-sm font-bold text-stone-500">
+                      {unlocked
+                        ? currentLesson
+                          ? `${language === "ru" ? "Текущий урок" : "Joriy dars"}: ${language === "ru" ? currentLesson.titleRu : currentLesson.titleUz}`
+                          : examPassed
+                            ? (language === "ru" ? "Уровень завершён." : "Daraja yakunlangan.")
+                            : (language === "ru" ? "Все уроки завершены, экзамен открыт." : "Barcha darslar tugagan, imtihon ochiq.")
+                        : getLevelLockReason(level, { knownWordIds: known }, attempts, language)}
+                    </p>
                   </div>
-                  <AppButton href={unlocked ? `/lesson/${level}` : `/exam/${level}`} variant={unlocked ? "primary" : "secondary"}>
-                    {unlocked ? (language === "ru" ? "Следующий этап" : "Keyingi bosqich") : (language === "ru" ? "Просмотр" : "Ko‘rib chiqish")} <ArrowRight className="h-4 w-4" />
+                  <AppButton href={href} variant={unlocked ? "primary" : "secondary"}>
+                    {actionLabel} <ArrowRight className="h-4 w-4" />
                   </AppButton>
                 </div>
               </article>
