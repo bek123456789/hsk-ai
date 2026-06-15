@@ -1,16 +1,16 @@
 {
-  "name": "HSK AI",
-  "short_name": "HSK AI",
-  "description": "Premium Chinese learning app for HSK 1 to HSK 6.",
+  "name": "HanziFlow AI",
+  "short_name": "HanziFlow",
+  "description": "Xitoy tilini AI yordamchi va HSK tayyorgarlik mashqlari orqali o‘rganish platformasi.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#FFF8EC",
-  "theme_color": "#FF7A1A",
+  "background_color": "#FFF7ED",
+  "theme_color": "#FF6B1A",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/brand/hanziflow-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

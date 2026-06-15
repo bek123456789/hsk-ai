@@ -1,0 +1,67 @@
+import type { HSKSkillQuestion } from "@/data/hsk/contentTypes";
+import { difficultyForLevel, levels, optionSet, simpleQuestion, translationDistractors, wordsFor } from "@/data/hsk/contentFactory";
+import type { HSKLevel } from "@/types";
+
+export const hskQuizQuestions: HSKSkillQuestion[] = levels.flatMap((level) => {
+  const words = wordsFor(level, level <= 2 ? 24 : 16);
+  return words.flatMap((word, index) => {
+    const distractors = translationDistractors(level, word);
+    return [
+      simpleQuestion({
+        id: `quiz-hsk${level}-meaning-${String(index + 1).padStart(3, "0")}`,
+        level,
+        promptZh: word.hanzi,
+        promptPinyin: word.pinyin,
+        correct: word,
+        questionUz: "Bu so‘zning ma’nosini tanlang.",
+        questionRu: "Выберите значение этого слова.",
+        skill: "vocabulary",
+        type: "vocabulary"
+      }),
+      {
+        id: `quiz-hsk${level}-pinyin-${String(index + 1).padStart(3, "0")}`,
+        level,
+        type: "pinyin" as const,
+        questionUz: "To‘g‘ri pinyinni tanlang.",
+        questionRu: "Выберите pinyin.",
+        promptZh: word.hanzi,
+        promptPinyin: "",
+        options: optionSet({
+          correctUz: word.pinyin,
+          correctRu: word.pinyin,
+          correctPinyin: word.pinyin,
+          distractors: distractors.map((item) => ({ uz: item.pinyin ?? item.uz, ru: item.pinyin ?? item.ru, pinyin: item.pinyin }))
+        }),
+        correctOptionId: "a" as const,
+        explanationUz: `${word.hanzi} pinyini ${word.pinyin}.`,
+        explanationRu: `Pinyin для ${word.hanzi}: ${word.pinyin}.`,
+        skill: "vocabulary" as const,
+        difficulty: difficultyForLevel(level)
+      },
+      {
+        id: `quiz-hsk${level}-character-${String(index + 1).padStart(3, "0")}`,
+        level,
+        type: "vocabulary" as const,
+        questionUz: "Ma’noga mos xitoycha so‘zni tanlang.",
+        questionRu: "Выберите китайское слово по значению.",
+        promptZh: word.uz,
+        promptPinyin: word.ru,
+        options: optionSet({
+          correctUz: word.hanzi,
+          correctRu: word.hanzi,
+          correctZh: word.hanzi,
+          distractors: distractors.map((item) => ({ uz: item.zh ?? item.uz, ru: item.zh ?? item.ru, zh: item.zh }))
+        }),
+        correctOptionId: "a" as const,
+        explanationUz: `${word.uz} — ${word.hanzi} (${word.pinyin}).`,
+        explanationRu: `${word.ru} — ${word.hanzi} (${word.pinyin}).`,
+        skill: "vocabulary" as const,
+        difficulty: difficultyForLevel(level)
+      }
+    ];
+  });
+});
+
+export function getQuizQuestionsByLevel(level: HSKLevel) {
+  return hskQuizQuestions.filter((question) => question.level === level);
+}

@@ -2,7 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useI18n } from "@/utils/i18n";
 
@@ -13,23 +13,27 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
   const { t } = useI18n();
+  const [fallbackReady, setFallbackReady] = useState(false);
 
   useEffect(() => {
+    setFallbackReady(false);
     initializeAuth();
-  }, [initializeAuth]);
+    const timer = window.setTimeout(() => setFallbackReady(true), 7500);
+    return () => window.clearTimeout(timer);
+  }, [initializeAuth, pathname]);
 
   useEffect(() => {
-    if (hasHydrated && !user) {
+    if ((hasHydrated || fallbackReady) && !user) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [hasHydrated, pathname, router, user]);
+  }, [fallbackReady, hasHydrated, pathname, router, user]);
 
-  if (!hasHydrated || !user) {
+  if ((!hasHydrated && !fallbackReady) || !user) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center px-5">
-        <div className="rounded-5xl border border-white/70 bg-white/82 p-8 text-center shadow-premium backdrop-blur-xl dark:border-white/10 dark:bg-white/10">
+        <div className="rounded-5xl border border-white/70 bg-white/82 p-8 text-center shadow-premium backdrop-blur-xl">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-orange-brand" />
-          <p className="mt-4 text-sm font-black text-stone-500 dark:text-stone-300">{t("auth.checking")}</p>
+          <p className="mt-4 text-sm font-black text-stone-500">{t("auth.checking")}</p>
         </div>
       </div>
     );

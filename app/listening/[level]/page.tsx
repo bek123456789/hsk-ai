@@ -1,119 +1,143 @@
 "use client";
 
-import { Check, Volume2, X } from "lucide-react";
+import { ArrowLeft, Check, Eye, Headphones, RefreshCcw, X } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AppButton } from "@/components/AppButton";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { getWordsByLevel, hskWords } from "@/data/hskWords";
-import { saveMistake as saveRemoteMistake, saveWeakWord, saveWordProgress } from "@/lib/progressService";
-import { useAuthStore } from "@/store/authStore";
+import { ReportContentButton } from "@/components/ReportContentButton";
+import { getListeningByLevel } from "@/data/hsk/contentIndex";
 import { useProgressStore } from "@/store/progressStore";
-import type { HSKLevel, HSKWord } from "@/types";
-import { getWordTranslation, useI18n } from "@/utils/i18n";
-
-function parseLevel(value: string | string[] | undefined): HSKLevel {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const numberValue = Number(raw);
-  return numberValue >= 1 && numberValue <= 6 ? (numberValue as HSKLevel) : 1;
-}
-
-function makeOptions(word: HSKWord, language: "uz" | "ru") {
-  return Array.from(new Set([getWordTranslation(word, language), ...hskWords.filter((item) => item.id !== word.id).slice(0, 8).map((item) => getWordTranslation(item, language))])).slice(0, 4);
-}
+import type { HSKLevel } from "@/types";
+import { useI18n } from "@/utils/i18n";
+import { parseHskLevel } from "@/utils/level";
+import { isLearningContentDone, saveLearningProgress } from "@/utils/learningProgress";
+import { speakChinese } from "@/utils/speechSynthesis";
 
 export default function ListeningPage() {
   const params = useParams();
-  const level = parseLevel(params.level);
-  const { language, t } = useI18n();
-  const words = useMemo(() => getWordsByLevel(level), [level]);
-  const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
-  const markKnown = useProgressStore((state) => state.markKnown);
-  const markWeak = useProgressStore((state) => state.markWeak);
+  const level = parseHskLevel(params.level);
+  const { language } = useI18n();
+  const prompts = useMemo(() => getListeningByLevel(level), [level]);
   const addMistake = useProgressStore((state) => state.addMistake);
-  const user = useAuthStore((state) => state.user);
-  const word = words[index] ?? words[0];
-  const options = word ? makeOptions(word, language) : [];
-  const correct = word ? getWordTranslation(word, language) : "";
+  const savePracticeResult = useProgressStore((state) => state.savePracticeResult);
+  const [index, setIndex] = useState(0);
+  const [selected, setSelected] = useState("");
+  const [checked, setChecked] = useState(false);
+  const [showPinyin, setShowPinyin] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [replays, setReplays] = useState(0);
+  const [audioError, setAudioError] = useState("");
+  const prompt = prompts[index];
+  const question = prompt?.questions[0];
+  const done = prompt ? isLearningContentDone("listening", prompt.id) : false;
+  const canReplay = prompt ? replays < (prompt.replayLimit ?? 3) : false;
 
-  function speak() {
-    if (!word || typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const utterance = new SpeechSynthesisUtterance(word.chinese);
-    utterance.lang = "zh-CN";
-    window.speechSynthesis.speak(utterance);
+  function listen() {
+    if (!prompt || !canReplay) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      setAudioError(language === "ru" ? "Аудио недоступно" : "Ovoz mavjud emas");
+      return;
+    }
+    setAudioError("");
+    speakChinese(prompt.audioTextZh);
+    setReplays((value) => value + 1);
   }
 
-  function choose(option: string) {
-    if (!word || selected) return;
-    setSelected(option);
-    if (option === correct) {
-      markKnown(word.id);
-      saveWordProgress({ userId: user?.id, wordId: word.id, hskLevel: level, lessonId: word.lessonId, status: "review", correctCount: 1, lastReviewedAt: new Date().toISOString() }).catch(() => undefined);
+  function choose(optionId: string) {
+    if (!question || checked) return;
+    setSelected(optionId);
+    setChecked(true);
+    const correct = optionId === question.correctOptionId;
+    saveLearningProgress({ kind: "listening", contentId: prompt.id, level, score: correct ? 1 : 0, total: 1, done: correct, mistakes: correct ? [] : [question.id] });
+    savePracticeResult({ id: `listening-${level}-${Date.now()}`, skill: "listening", hskLevel: level, score: correct ? 1 : 0, total: 1, completedAt: new Date().toISOString() });
+    if (!correct) {
+      const selectedOption = question.options.find((option) => option.id === optionId);
+      const correctOption = question.options.find((option) => option.id === question.correctOptionId);
+      addMistake({
+        source: "listening",
+        hskLevel: level,
+        chinese: prompt.audioTextZh,
+        pinyin: prompt.audioTextPinyin,
+        wrongAnswer: language === "ru" ? selectedOption?.textRu ?? optionId : selectedOption?.textUz ?? optionId,
+        correctAnswer: language === "ru" ? correctOption?.textRu ?? "" : correctOption?.textUz ?? "",
+        explanation: language === "ru" ? question.explanationRu : question.explanationUz
+      });
     }
-    else {
-      markWeak(word.id);
-      saveWeakWord({ userId: user?.id, wordId: word.id, hskLevel: level, lessonId: word.lessonId, reason: "listening" }).catch(() => undefined);
-      addMistake({ source: "listening", hskLevel: level, chinese: word.chinese, pinyin: word.pinyin, wrongAnswer: option, correctAnswer: correct, explanation: `${word.chinese} — ${correct}.`, wordId: word.id });
-      saveRemoteMistake({
-        userId: user?.id,
-        mistake: {
-          id: `listening-${word.id}-${Date.now()}`,
-          source: "listening",
-          hskLevel: level,
-          chinese: word.chinese,
-          pinyin: word.pinyin,
-          wrongAnswer: option,
-          correctAnswer: correct,
-          explanation: `${word.chinese} — ${correct}.`,
-          createdAt: new Date().toISOString(),
-          learned: false,
-          wordId: word.id
-        }
-      }).catch(() => undefined);
-    }
+  }
+
+  function next() {
+    setIndex((value) => (value + 1) % prompts.length);
+    setSelected("");
+    setChecked(false);
+    setShowPinyin(false);
+    setShowTranscript(false);
+    setReplays(0);
+    setAudioError("");
   }
 
   return (
     <ProtectedRoute>
-      <section className="premium-grid mx-auto max-w-4xl px-5 pb-36 pt-10 sm:px-8 md:pb-10 lg:py-14">
-        <div className="mb-8 text-center">
-          <p className="text-sm font-black text-orange-deep dark:text-orange-200">HSK {level}</p>
-          <h1 className="mt-2 text-5xl font-black text-ink dark:text-cream">{t("listening.title")}</h1>
-          <p className="mt-4 text-lg font-semibold text-stone-600 dark:text-stone-300">{t("listening.subtitle")}</p>
+      <section className="premium-grid mx-auto max-w-6xl px-5 pb-36 pt-10 sm:px-8 md:pb-10 lg:py-14">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <AppButton href="/listening" variant="ghost" className="px-4"><ArrowLeft className="h-5 w-5" /> {language === "ru" ? "Практика аудирования" : "Tinglash mashqi"}</AppButton>
+          <span className="rounded-full bg-white/80 px-4 py-2 text-sm font-black text-ink shadow-soft">HSK {level}</span>
         </div>
-        {word ? (
-          <div className="rounded-[2.5rem] bg-white/84 p-7 text-center shadow-premium dark:bg-white/10 sm:p-10">
-            <button onClick={speak} className="mx-auto flex h-28 w-28 items-center justify-center rounded-[2rem] bg-gradient-to-br from-orange-brand to-amber-300 text-white shadow-glow transition hover:scale-105">
-              <Volume2 className="h-12 w-12" />
-            </button>
-            <p className="mt-5 text-sm font-black text-stone-500 dark:text-stone-300">{t("listening.play")}</p>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {options.map((option) => {
-                const isSelected = selected === option;
-                const isCorrect = selected && option === correct;
-                return (
-                  <button key={option} onClick={() => choose(option)} className={`flex items-center justify-between rounded-4xl p-4 text-left text-sm font-black shadow-soft ${
-                    isCorrect ? "bg-mint text-emerald-800" : isSelected ? "bg-red-100 text-red-700" : "bg-cream text-ink dark:bg-white/8 dark:text-cream"
-                  }`}>
-                    {option}
-                    {isCorrect ? <Check className="h-5 w-5" /> : isSelected ? <X className="h-5 w-5" /> : null}
-                  </button>
-                );
-              })}
-            </div>
-            {selected ? (
-              <div className="mt-7 flex justify-center">
-                <button onClick={() => { setSelected(null); setIndex((value) => (value + 1) % words.length); }} className="rounded-full bg-gradient-to-r from-orange-brand to-orange-hot px-6 py-3 text-sm font-black text-white shadow-card">{t("common.next")}</button>
+        {prompt && question ? (
+          <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="rounded-[2.5rem] bg-white/88 p-6 shadow-premium sm:p-8">
+              <p className="text-sm font-black text-orange-deep">{language === "ru" ? "Прослушайте и ответьте" : "Eshitib javob bering"}</p>
+              <h1 className="mt-2 text-4xl font-black text-ink">{language === "ru" ? prompt.titleRu : prompt.titleUz}</h1>
+              <p className="mt-3 text-sm font-bold leading-6 text-stone-600">
+                {language === "ru"
+                  ? "Эта практика аудирования помогает понимать короткие китайские фразы на слух."
+                  : "Bu tinglash mashqi sizga xitoycha qisqa gaplarni eshitib tushunishga yordam beradi."}
+              </p>
+              <div className="mt-6 rounded-[2rem] bg-gradient-to-br from-cream to-orange-soft/55 p-8 text-center">
+                <button onClick={listen} disabled={!canReplay} className="warm-focus mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-orange-brand to-orange-hot text-white shadow-glow disabled:opacity-40">
+                  <Headphones className="h-12 w-12" />
+                </button>
+                <p className="mt-4 text-sm font-black text-stone-600">{language === "ru" ? "Сейчас воспроизводится" : "Hozir eshittirilmoqda"} · {replays}/{prompt.replayLimit ?? 3}</p>
+                {audioError ? <p className="mt-3 rounded-full bg-rose-50 px-4 py-2 text-sm font-black text-rose-700">{audioError}</p> : null}
               </div>
-            ) : null}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <AppButton variant="secondary" disabled={!checked} onClick={() => setShowPinyin((value) => !value)}><Eye className="h-4 w-4" /> {language === "ru" ? "Показать pinyin" : "Pinyinni ko‘rish"}</AppButton>
+                <AppButton variant="secondary" disabled={!checked} onClick={() => setShowTranscript((value) => !value)}><Eye className="h-4 w-4" /> {language === "ru" ? "Показать текст" : "Matnni ko‘rish"}</AppButton>
+              </div>
+              {(showPinyin || showTranscript || checked) ? (
+                <div className="mt-5 rounded-3xl bg-cream p-5">
+                  {showTranscript || checked ? <p className="text-2xl font-black leading-relaxed text-ink">{prompt.audioTextZh}</p> : null}
+                  {showPinyin || checked ? <p className="mt-2 font-bold leading-7 text-orange-brand">{prompt.audioTextPinyin}</p> : null}
+                  {checked ? <p className="mt-2 font-semibold leading-7 text-stone-700">{language === "ru" ? prompt.transcriptRu : prompt.transcriptUz}</p> : null}
+                </div>
+              ) : null}
+            </div>
+            <div className="rounded-[2.5rem] bg-white/88 p-6 shadow-premium sm:p-8">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-2xl font-black text-ink">{language === "ru" ? question.questionRu : question.questionUz}</h2>
+                {done ? <span className="rounded-full bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-700">{language === "ru" ? "Выполнено" : "Bajarildi"}</span> : null}
+              </div>
+              <p className="mt-3 text-sm font-bold text-stone-500">{language === "ru" ? prompt.speakerHintRu : prompt.speakerHintUz}</p>
+              <div className="mt-6 grid gap-3">
+                {question.options.map((option) => {
+                  const isSelected = selected === option.id;
+                  const isCorrect = checked && option.id === question.correctOptionId;
+                  return (
+                    <button key={option.id} onClick={() => choose(option.id)} className={`flex items-center justify-between rounded-3xl p-4 text-left text-sm font-black shadow-soft ${isCorrect ? "bg-orange-soft text-orange-deep" : isSelected ? "bg-red-100 text-red-700" : "bg-cream text-ink"}`}>
+                      <span>{language === "ru" ? option.textRu : option.textUz}</span>
+                      {isCorrect ? <Check className="h-5 w-5" /> : isSelected ? <X className="h-5 w-5" /> : null}
+                    </button>
+                  );
+                })}
+              </div>
+              {checked ? <p className="mt-5 rounded-3xl bg-white p-4 text-sm font-semibold leading-6 text-stone-600"><b>{language === "ru" ? "Объяснение" : "Tushuntirish"}:</b> {language === "ru" ? question.explanationRu : question.explanationUz}</p> : null}
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <ReportContentButton itemId={prompt.id} itemType="listening" hskLevel={level} />
+                {checked ? <AppButton onClick={next}><RefreshCcw className="h-4 w-4" /> {language === "ru" ? "Следующее" : "Keyingi"}</AppButton> : null}
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="rounded-[2.5rem] bg-white/84 p-10 text-center shadow-premium dark:bg-white/10">
-            <h2 className="text-3xl font-black text-ink dark:text-cream">{t("review.empty")}</h2>
-            <div className="mt-6"><AppButton href="/lesson/1">{t("lessons.title")}</AppButton></div>
-          </div>
-        )}
+        ) : null}
       </section>
     </ProtectedRoute>
   );

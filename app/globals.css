@@ -4,12 +4,7 @@
 
 :root {
   color-scheme: light;
-  background: #fff8ec;
-}
-
-.dark {
-  color-scheme: dark;
-  background: #15110f;
+  background: #fff7ed;
 }
 
 * {
@@ -29,26 +24,19 @@ body {
     radial-gradient(circle at 10% 10%, rgba(255, 122, 26, 0.16), transparent 26%),
     radial-gradient(circle at 88% 6%, rgba(119, 205, 255, 0.28), transparent 28%),
     radial-gradient(circle at 75% 85%, rgba(180, 138, 255, 0.18), transparent 28%),
-    #fff8ec;
-  color: #211a17;
-}
-
-.dark body {
-  background:
-    radial-gradient(circle at 12% 8%, rgba(255, 122, 26, 0.18), transparent 26%),
-    radial-gradient(circle at 90% 10%, rgba(86, 159, 255, 0.16), transparent 28%),
-    radial-gradient(circle at 52% 92%, rgba(158, 112, 255, 0.14), transparent 28%),
-    #15110f;
-  color: #fff8ec;
+    #fff7ed;
+  color: #241a14;
 }
 
 button,
-input {
+input,
+textarea,
+select {
   font: inherit;
 }
 
 ::selection {
-  background: #ff7a1a;
+  background: #ff6b1a;
   color: white;
 }
 
@@ -64,14 +52,20 @@ input {
   background-size: 42px 42px;
 }
 
-.dark .premium-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
-}
-
 .text-balance {
   text-wrap: balance;
+}
+
+.light-panel {
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 20px 60px rgba(124, 74, 30, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.warm-focus:focus-visible {
+  outline: 3px solid rgba(255, 122, 26, 0.28);
+  outline-offset: 3px;
 }
 
 .perspective-1000 {

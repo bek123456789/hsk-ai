@@ -1,62 +1,110 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, Clock3, Lock, Trophy } from "lucide-react";
+import { BookOpenCheck, CheckCircle2, Clock3, Headphones, Lock, Mic, PenLine, RotateCcw, Trophy } from "lucide-react";
 import { AppButton } from "@/components/AppButton";
 import { Card } from "@/components/Card";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { getExamQuestions } from "@/data/examQuestions";
+import { hskExamTemplates } from "@/data/hsk/examTemplates";
+import { getCurriculumLessonsByLevel } from "@/data/hsk/lessonCurriculum";
 import { useProgressStore } from "@/store/progressStore";
-import { examMeta, hskLevels, isExamUnlocked } from "@/utils/exam";
+import { getBestExamScore, getCompletedLessonCount, getExamLockReason, isExamUnlocked, isLevelUnlocked } from "@/utils/hskUnlock";
 import { useI18n } from "@/utils/i18n";
 
 export default function ExamCenterPage() {
-  const bestScoreByLevel = useProgressStore((state) => state.bestScoreByLevel);
-  const { language, t } = useI18n();
+  const knownWordIds = useProgressStore((state) => state.knownWordIds);
+  const examAttempts = useProgressStore((state) => state.examAttempts);
+  const { language } = useI18n();
+  const progress = { knownWordIds };
 
   return (
     <ProtectedRoute>
-      <section className="premium-grid mx-auto max-w-7xl px-5 pb-36 pt-10 sm:px-8 md:pb-10 lg:py-14">
+      <section className="mx-auto max-w-7xl px-4 pb-36 pt-8 sm:px-8 md:pb-10 lg:py-12">
         <div className="mb-8 max-w-3xl">
-          <p className="text-sm font-black uppercase tracking-normal text-orange-deep dark:text-orange-200">{t("exam.practice")}</p>
-          <h1 className="mt-2 text-5xl font-black text-ink dark:text-cream sm:text-7xl">{t("exam.title")}</h1>
-          <p className="mt-4 text-lg font-semibold leading-8 text-stone-600 dark:text-stone-300">{t("exam.subtitle")}</p>
+          <p className="text-sm font-black uppercase text-orange-deep">{language === "ru" ? "Экзамены для подготовки к HSK" : "HSK tayyorgarlik imtihonlari"}</p>
+          <h1 className="mt-2 text-5xl font-black text-ink sm:text-7xl">{language === "ru" ? "Экзаменационный центр" : "Imtihon markazi"}</h1>
+          <p className="mt-4 text-lg font-semibold leading-8 text-stone-600">
+            {language === "ru"
+              ? "Завершайте уроки, сдавайте экзамен на 80% или выше и открывайте следующий уровень по порядку."
+              : "Darslarni yakunlang, imtihondan 80% yoki yuqori ball oling va keyingi darajani ketma-ket oching."}
+          </p>
+          <p className="mt-4 rounded-3xl border border-orange-soft bg-orange-50 px-5 py-3 text-sm font-black leading-6 text-orange-deep">
+            {language === "ru" ? "Это оригинальные тренировочные экзамены в стиле HSK, а не официальные экзамены." : "Bular rasmiy imtihonlar emas, original HSK uslubidagi tayyorgarlik imtihonlaridir."}
+          </p>
         </div>
+
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {hskLevels.map((level, index) => {
-            const unlocked = isExamUnlocked(level, bestScoreByLevel ?? {});
-            const score = bestScoreByLevel?.[level] ?? 0;
-            const meta = examMeta[level];
+          {hskExamTemplates.map((template, index) => {
+            const level = template.level;
+            const levelOpen = isLevelUnlocked(level, progress, examAttempts);
+            const examOpen = isExamUnlocked(level, progress, examAttempts);
+            const bestScore = getBestExamScore(level, examAttempts);
+            const passed = bestScore >= template.passingScore;
+            const lessons = getCurriculumLessonsByLevel(level);
+            const completedLessons = getCompletedLessonCount(level, progress);
+            const lockReason = getExamLockReason(level, progress, examAttempts, language);
+            const status = passed
+              ? language === "ru" ? "Пройдено" : "O‘tildi"
+              : examOpen
+                ? language === "ru" ? "Открыто" : "Ochiq"
+                : language === "ru" ? "Закрыто" : "Yopiq";
+
             return (
-              <motion.div key={level} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
-                <Card className={`relative overflow-hidden p-6 ${unlocked ? "" : "opacity-78"}`}>
-                  <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-orange-soft blur-2xl dark:bg-orange-brand/20" />
-                  <div className="relative flex items-start justify-between gap-4">
+              <motion.div key={template.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
+                <Card className={`relative h-full overflow-hidden p-6 ${examOpen || passed ? "" : "bg-stone-50/90"}`}>
+                  <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm font-black text-orange-deep dark:text-orange-200">{t("exam.practice")}</p>
-                      <h2 className="mt-2 text-4xl font-black text-ink dark:text-cream">HSK {level}</h2>
+                      <p className="text-sm font-black text-orange-deep">{language === "ru" ? template.titleRu : template.titleUz}</p>
+                      <h2 className="mt-2 text-4xl font-black text-ink">HSK {level}</h2>
                     </div>
-                    <div className={`flex h-14 w-14 items-center justify-center rounded-3xl ${unlocked ? "bg-mint text-emerald-700" : "bg-stone-100 text-stone-500 dark:bg-white/10"}`}>
-                      {unlocked ? <CheckCircle2 className="h-7 w-7" /> : <Lock className="h-7 w-7" />}
-                    </div>
+                    <span className={`flex h-14 w-14 items-center justify-center rounded-3xl ${passed ? "bg-emerald-50 text-emerald-700" : examOpen ? "bg-orange-soft text-orange-deep" : "bg-stone-100 text-stone-400"}`}>
+                      {passed ? <CheckCircle2 className="h-7 w-7" /> : examOpen ? <Trophy className="h-7 w-7" /> : <Lock className="h-7 w-7" />}
+                    </span>
                   </div>
-                  <div className="relative mt-6 grid grid-cols-2 gap-3 text-sm font-black text-stone-600 dark:text-stone-300">
-                    <div className="rounded-3xl bg-cream p-4 dark:bg-white/8"><Clock3 className="mb-2 h-5 w-5 text-orange-brand" />{meta.minutes} {t("common.minutes")}</div>
-                    <div className="rounded-3xl bg-cream p-4 dark:bg-white/8"><Trophy className="mb-2 h-5 w-5 text-orange-brand" />{getExamQuestions(level).length} {t("exam.questions")}</div>
+
+                  <div className="mt-5 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-black shadow-soft">
+                    <span className={passed ? "text-emerald-700" : examOpen ? "text-orange-deep" : "text-stone-500"}>{status}</span>
+                    <span className="text-stone-500">{bestScore}%</span>
                   </div>
-                  <div className="relative mt-5">
-                    <div className="mb-2 flex justify-between text-xs font-black text-stone-500 dark:text-stone-300">
-                      <span>{language === "ru" ? meta.difficultyRu : meta.difficultyUz}</span>
-                      <span>{score}%</span>
-                    </div>
-                    <div className="h-3 rounded-full bg-white shadow-soft dark:bg-white/10">
-                      <div className="h-3 rounded-full bg-gradient-to-r from-orange-brand to-amber-300" style={{ width: `${score}%` }} />
-                    </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs font-black text-stone-600">
+                    <span className="rounded-2xl bg-cream p-3"><Clock3 className="mb-2 h-4 w-4 text-orange-brand" />{template.estimatedMinutes} {language === "ru" ? "минут" : "daqiqa"}</span>
+                    <span className="rounded-2xl bg-cream p-3"><BookOpenCheck className="mb-2 h-4 w-4 text-orange-brand" />{completedLessons}/{lessons.length} {language === "ru" ? "уроков" : "dars"}</span>
                   </div>
-                  <div className="relative mt-6">
-                    <AppButton href={`/exam/${level}`} variant={unlocked ? "primary" : "secondary"} className="w-full">
-                      {unlocked ? t("exam.start") : t("common.preview")}
-                    </AppButton>
+
+                  <div className="mt-4 grid grid-cols-4 gap-2">
+                    {[
+                      [Headphones, language === "ru" ? "Ауд." : "Ting."],
+                      [BookOpenCheck, language === "ru" ? "Чтен." : "O‘qish"],
+                      [Mic, language === "ru" ? "Говор." : "Gap."],
+                      [PenLine, language === "ru" ? "Письм." : "Yoz."]
+                    ].map(([Icon, label]) => {
+                      const SkillIcon = Icon as typeof Headphones;
+                      return <span key={String(label)} className="flex flex-col items-center rounded-2xl bg-white px-1 py-3 text-[10px] font-black text-stone-500 shadow-soft"><SkillIcon className="mb-1 h-4 w-4 text-orange-brand" />{String(label)}</span>;
+                    })}
+                  </div>
+
+                  {!examOpen && !passed ? (
+                    <div className="mt-4 rounded-2xl border border-stone-200 bg-white p-4 text-sm font-bold leading-6 text-stone-600">
+                      {lockReason}
+                    </div>
+                  ) : null}
+
+                  <div className="mt-6">
+                    {examOpen || passed ? (
+                      <AppButton href={`/exam/${level}`} className="w-full">
+                        {passed ? <RotateCcw className="h-4 w-4" /> : <Trophy className="h-4 w-4" />}
+                        {passed
+                          ? language === "ru" ? "Пересдать" : "Qayta topshirish"
+                          : language === "ru" ? "Начать экзамен" : "Imtihonni boshlash"}
+                      </AppButton>
+                    ) : (
+                      <AppButton href={levelOpen ? `/lessons/${level}` : level === 1 ? "/lessons/1" : `/exam/${level - 1}`} variant="secondary" className="w-full">
+                        {levelOpen
+                          ? language === "ru" ? "Завершить уроки" : "Darslarni yakunlash"
+                          : language === "ru" ? "Предыдущий уровень" : "Avvalgi daraja"}
+                      </AppButton>
+                    )}
                   </div>
                 </Card>
               </motion.div>

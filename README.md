@@ -1,4 +1,4 @@
-# HSK AI
+# HanziFlow AI
 
 Premium mobile-first Chinese learning web app for HSK 1 to HSK 6.
 

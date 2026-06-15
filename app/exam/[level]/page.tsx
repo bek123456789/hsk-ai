@@ -1,185 +1,389 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Clock3, Volume2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Clock3, Headphones, Lock, Mic, Send, Volume2, PenLine } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AppButton } from "@/components/AppButton";
+import { Card } from "@/components/Card";
+import { PremiumLock } from "@/components/PremiumLock";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { getExamQuestions } from "@/data/examQuestions";
-import { saveExamResult as saveRemoteExamResult, saveMistake as saveRemoteMistake, saveWeakWord } from "@/lib/progressService";
+import { getExamTemplate } from "@/data/hsk/examTemplates";
+import type { HSKContentOption, HSKListeningPrompt, HSKReadingPassage } from "@/data/hsk/contentTypes";
+import type { ExamSpeakingPrompt } from "@/data/hsk/examSpeakingPrompts";
+import type { ExamWritingPrompt } from "@/data/hsk/examWritingPrompts";
 import { useAuthStore } from "@/store/authStore";
 import { useProgressStore } from "@/store/progressStore";
-import type { HSKLevel } from "@/types";
-import { formatSeconds, getLocalizedQuestion, isExamUnlocked } from "@/utils/exam";
+import type { AppLanguage, ExamAttempt, ExamSectionResult, ExamSkill, HSKLevel } from "@/types";
+import { syncExamResult } from "@/utils/examProgress";
+import {
+  calculateOverallExamScore,
+  EXAM_PASSING_SCORE,
+  getRecommendedExamLessons,
+  getWeakExamSkills,
+  scoreChoiceSection,
+  scoreOpenSection,
+  scoreSpeakingAnswer,
+  scoreWritingAnswer
+} from "@/utils/examScoring";
+import { formatSeconds } from "@/utils/exam";
+import { getExamLockReason, isExamUnlocked } from "@/utils/hskUnlock";
 import { useI18n } from "@/utils/i18n";
+import { parseHskLevel } from "@/utils/level";
+import { isPremiumProfile } from "@/utils/premium";
 
-function parseLevel(value: string | string[] | undefined): HSKLevel {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const numberValue = Number(raw);
-  return numberValue >= 1 && numberValue <= 6 ? (numberValue as HSKLevel) : 1;
+type ChoiceItem =
+  | { kind: "listening"; skill: "listening"; id: string; source: HSKListeningPrompt; question: HSKListeningPrompt["questions"][number] }
+  | { kind: "reading"; skill: "reading"; id: string; source: HSKReadingPassage; question: HSKReadingPassage["questions"][number] };
+type OpenItem =
+  | { kind: "speaking"; skill: "speaking"; id: string; source: ExamSpeakingPrompt }
+  | { kind: "writing"; skill: "writing"; id: string; source: ExamWritingPrompt };
+type ExamItem = ChoiceItem | OpenItem;
+
+const skillIcons = { listening: Headphones, reading: BookOpen, speaking: Mic, writing: PenLine };
+
+function optionText(option: HSKContentOption, language: AppLanguage) {
+  return language === "ru"
+    ? option.textRu ?? option.textZh ?? option.textPinyin ?? ""
+    : option.textUz ?? option.textZh ?? option.textPinyin ?? "";
+}
+
+function buildItems(level: HSKLevel): ExamItem[] {
+  const template = getExamTemplate(level);
+  const items: ExamItem[] = [];
+  for (const section of template.sections) {
+    if (section.id === "listening") {
+      for (const source of section.questions) {
+        for (const question of source.questions) {
+          items.push({ kind: "listening", skill: "listening", id: question.id, source, question });
+        }
+      }
+      continue;
+    }
+    if (section.id === "reading") {
+      for (const source of section.questions) {
+        for (const question of source.questions) {
+          items.push({ kind: "reading", skill: "reading", id: question.id, source, question });
+        }
+      }
+      continue;
+    }
+    if (section.id === "speaking") {
+      for (const source of section.prompts) {
+        items.push({ kind: "speaking", skill: "speaking", id: source.examId, source });
+      }
+      continue;
+    }
+    for (const source of section.prompts) {
+      items.push({ kind: "writing", skill: "writing", id: source.id, source });
+    }
+  }
+  return items;
+}
+
+function sectionTitle(skill: ExamSkill, language: AppLanguage) {
+  const labels = {
+    uz: { listening: "Listening bo‘limi", reading: "O‘qish bo‘limi", speaking: "Speaking bo‘limi", writing: "Writing bo‘limi" },
+    ru: { listening: "Раздел аудирования", reading: "Раздел чтения", speaking: "Раздел говорения", writing: "Раздел письма" }
+  };
+  return labels[language][skill];
 }
 
 export default function ExamLevelPage() {
-  const router = useRouter();
   const params = useParams();
-  const level = parseLevel(params.level);
-  const { language, t } = useI18n();
-  const questions = useMemo(() => getExamQuestions(level).slice(0, 20), [level]);
-  const bestScoreByLevel = useProgressStore((state) => state.bestScoreByLevel);
+  const router = useRouter();
+  const level = parseHskLevel(params.level);
+  const { language } = useI18n();
+  const template = useMemo(() => getExamTemplate(level), [level]);
+  const items = useMemo(() => buildItems(level), [level]);
+  const user = useAuthStore((state) => state.user);
+  const knownWordIds = useProgressStore((state) => state.knownWordIds);
+  const examAttempts = useProgressStore((state) => state.examAttempts);
   const saveExamAttempt = useProgressStore((state) => state.saveExamAttempt);
   const addMistake = useProgressStore((state) => state.addMistake);
-  const markWeak = useProgressStore((state) => state.markWeak);
-  const user = useAuthStore((state) => state.user);
-  const unlocked = isExamUnlocked(level, bestScoreByLevel ?? {});
+  const premium = isPremiumProfile(user);
+  const examOpen = isExamUnlocked(level, { knownWordIds }, examAttempts);
+  const lockReason = getExamLockReason(level, { knownWordIds }, examAttempts, language);
   const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [choiceAnswers, setChoiceAnswers] = useState<Record<string, string>>({});
+  const [openAnswers, setOpenAnswers] = useState<Record<string, string>>({});
   const [startedAt] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
-  const question = questions[index];
-  const localized = question ? getLocalizedQuestion(question, language) : null;
+  const [submitting, setSubmitting] = useState(false);
+  const item = items[index];
 
   useEffect(() => {
     const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000);
     return () => window.clearInterval(timer);
   }, [startedAt]);
 
-  function speak() {
-    if (!question || typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const utterance = new SpeechSynthesisUtterance(question.promptChinese);
+  function speak(text: string) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "zh-CN";
     window.speechSynthesis.speak(utterance);
   }
 
-  function submit() {
-    if (!unlocked) return;
-    const checkedAnswers = questions.map((item) => {
-      const local = getLocalizedQuestion(item, language);
-      const selectedAnswer = answers[item.id] ?? "";
+  async function submitExam() {
+    if (!examOpen || submitting) return;
+    setSubmitting(true);
+    const listeningSection = template.sections.find((section) => section.id === "listening");
+    const readingSection = template.sections.find((section) => section.id === "reading");
+    const speakingItems = items.filter((entry): entry is Extract<ExamItem, { kind: "speaking" }> => entry.kind === "speaking");
+    const writingItems = items.filter((entry): entry is Extract<ExamItem, { kind: "writing" }> => entry.kind === "writing");
+    const listening = listeningSection?.id === "listening" ? scoreChoiceSection(choiceAnswers, listeningSection.questions) : { score: 0, correct: 0, total: 0 };
+    const reading = readingSection?.id === "reading" ? scoreChoiceSection(choiceAnswers, readingSection.questions) : { score: 0, correct: 0, total: 0 };
+    const speakingScores = speakingItems.map((entry) => scoreSpeakingAnswer(entry.source, openAnswers[entry.id] ?? ""));
+    const writingScores = writingItems.map((entry) => scoreWritingAnswer(entry.source, openAnswers[entry.id] ?? ""));
+    const sections: Record<ExamSkill, ExamSectionResult> = {
+      listening,
+      reading,
+      speaking: scoreOpenSection(speakingScores, language, "speaking"),
+      writing: scoreOpenSection(writingScores, language, "writing")
+    };
+    const overallScore = calculateOverallExamScore(sections);
+    const passed = overallScore >= EXAM_PASSING_SCORE;
+    const weakSkills = getWeakExamSkills(sections);
+    const recommendedLessonIds = getRecommendedExamLessons(level, weakSkills);
+    const answerRows = items.map((entry) => {
+      if (entry.kind === "listening" || entry.kind === "reading") {
+        const selectedId = choiceAnswers[entry.id] ?? "";
+        const selectedOption = entry.question.options.find((option) => option.id === selectedId);
+        const correctOption = entry.question.options.find((option) => option.id === entry.question.correctOptionId);
+        return {
+          questionId: entry.id,
+          selectedAnswer: selectedOption ? optionText(selectedOption, language) : language === "ru" ? "Нет ответа" : "Javob berilmagan",
+          correctAnswer: correctOption ? optionText(correctOption, language) : entry.question.correctOptionId,
+          correct: selectedId === entry.question.correctOptionId
+        };
+      }
+      const selectedAnswer = openAnswers[entry.id] ?? "";
+      const score = entry.kind === "speaking" ? scoreSpeakingAnswer(entry.source, selectedAnswer) : scoreWritingAnswer(entry.source, selectedAnswer);
       return {
-        questionId: item.id,
+        questionId: entry.id,
         selectedAnswer,
-        correctAnswer: local.correctAnswer,
-        correct: selectedAnswer === local.correctAnswer
+        correctAnswer: entry.source.sampleAnswerZh,
+        correct: score >= 60
       };
     });
-    const correctAnswers = checkedAnswers.filter((answer) => answer.correct).length;
-    const wrongAnswers = checkedAnswers.length - correctAnswers;
-    const accuracy = Math.round((correctAnswers / checkedAnswers.length) * 100);
-    const id = `exam-${level}-${Date.now()}`;
-
-    checkedAnswers.forEach((answer) => {
-      if (!answer.correct) {
-        const item = questions.find((candidate) => candidate.id === answer.questionId);
-        if (!item) return;
-        const local = getLocalizedQuestion(item, language);
-        markWeak(item.id);
-        saveWeakWord({ userId: user?.id, wordId: item.id, hskLevel: level, reason: "exam" }).catch(() => undefined);
-        addMistake({
-          source: "exam",
-          hskLevel: level,
-          chinese: item.promptChinese,
-          pinyin: item.promptPinyin,
-          wrongAnswer: answer.selectedAnswer || "—",
-          correctAnswer: local.correctAnswer,
-          explanation: local.explanation
-        });
-        saveRemoteMistake({
-          userId: user?.id,
-          questionId: item.id,
-          mistake: {
-            id: `exam-${item.id}-${Date.now()}`,
-            source: "exam",
-            hskLevel: level,
-            chinese: item.promptChinese,
-            pinyin: item.promptPinyin,
-            wrongAnswer: answer.selectedAnswer || "—",
-            correctAnswer: local.correctAnswer,
-            explanation: local.explanation,
-            createdAt: new Date().toISOString(),
-            learned: false,
-            wordId: item.id
-          }
-        }).catch(() => undefined);
-      }
+    answerRows.forEach((answer, answerIndex) => {
+      if (answer.correct) return;
+      const sourceItem = items[answerIndex];
+      const chinese = sourceItem.kind === "listening"
+        ? sourceItem.source.audioTextZh
+        : sourceItem.kind === "reading"
+          ? sourceItem.source.passageZh
+          : sourceItem.kind === "speaking"
+            ? sourceItem.source.textZh
+            : sourceItem.source.instructionZh ?? sourceItem.source.sampleAnswerZh;
+      const explanation = sourceItem.kind === "listening" || sourceItem.kind === "reading"
+        ? language === "ru" ? sourceItem.question.explanationRu : sourceItem.question.explanationUz
+        : language === "ru"
+          ? `Сравните ответ с образцом: ${sourceItem.source.sampleAnswerRu}`
+          : `Javobni namuna bilan solishtiring: ${sourceItem.source.sampleAnswerUz}`;
+      addMistake({
+        source: "exam",
+        hskLevel: level,
+        chinese,
+        pinyin: sourceItem.kind === "listening"
+          ? sourceItem.source.audioTextPinyin
+          : sourceItem.kind === "reading"
+            ? sourceItem.source.passagePinyin
+            : sourceItem.source.sampleAnswerPinyin,
+        wrongAnswer: answer.selectedAnswer,
+        correctAnswer: answer.correctAnswer,
+        explanation
+      });
     });
-
-    const attempt = {
-      id,
+    const correctAnswers = answerRows.filter((answer) => answer.correct).length;
+    const attempt: ExamAttempt = {
+      id: `exam-${level}-${Date.now()}`,
       hskLevel: level,
       score: correctAnswers,
-      total: checkedAnswers.length,
-      accuracy,
+      total: answerRows.length,
+      accuracy: overallScore,
+      overallScore,
+      passingScore: EXAM_PASSING_SCORE,
+      passed,
       correctAnswers,
-      wrongAnswers,
+      wrongAnswers: answerRows.length - correctAnswers,
       timeSpentSeconds: Math.floor((Date.now() - startedAt) / 1000),
       completedAt: new Date().toISOString(),
-      answers: checkedAnswers
+      sections,
+      weakSkills,
+      recommendedLessonIds,
+      answers: answerRows
     };
-
     saveExamAttempt(attempt);
-    saveRemoteExamResult({ userId: user?.id, attempt }).catch(() => undefined);
-    router.push(`/exam/${level}/result?attempt=${id}`);
+    await syncExamResult(attempt, user?.id);
+    router.push(`/exam/${level}/result?attempt=${attempt.id}`);
+  }
+
+  if (!examOpen) {
+    return (
+      <ProtectedRoute>
+        <section className="mx-auto max-w-3xl px-5 pb-36 pt-10 sm:px-8 md:pb-10 lg:py-14">
+          <Card className="p-7 text-center sm:p-10">
+            <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.7rem] bg-orange-soft text-orange-deep"><Lock className="h-9 w-9" /></span>
+            <p className="mt-5 text-sm font-black text-orange-deep">HSK {level}</p>
+            <h1 className="mt-2 text-4xl font-black text-ink">{language === "ru" ? "Экзамен пока закрыт" : "Imtihon hali yopiq"}</h1>
+            <p className="mx-auto mt-4 max-w-xl text-base font-semibold leading-7 text-stone-600">{lockReason}</p>
+            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+              <AppButton href={`/lessons/${level}`}>{language === "ru" ? "Завершить уроки" : "Darslarni yakunlash"}</AppButton>
+              <AppButton href="/exam" variant="secondary">{language === "ru" ? "Вернуться в центр" : "Markazga qaytish"}</AppButton>
+            </div>
+          </Card>
+        </section>
+      </ProtectedRoute>
+    );
   }
 
   return (
     <ProtectedRoute>
-      <section className="premium-grid mx-auto max-w-5xl px-5 pb-36 pt-10 sm:px-8 md:pb-10 lg:py-14">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <AppButton href="/exam" variant="ghost" className="px-4"><ArrowLeft className="h-5 w-5" /> {t("nav.exam")}</AppButton>
-          <div className="rounded-full bg-white/80 px-4 py-2 text-sm font-black text-ink shadow-soft dark:bg-white/10 dark:text-cream">
-            <Clock3 className="mr-2 inline h-4 w-4 text-orange-brand" />{t("exam.timer")} {formatSeconds(elapsed)}
-          </div>
-        </div>
-        {!unlocked ? <div className="mb-5 rounded-4xl bg-orange-soft p-4 text-sm font-black text-orange-deep shadow-soft">{t("exam.previewLocked")}</div> : null}
-        {question && localized ? (
-          <div className="rounded-[2.5rem] border border-white/70 bg-white/84 p-6 shadow-premium backdrop-blur-xl dark:border-white/10 dark:bg-white/10 sm:p-10">
-            <div className="mb-5 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-black text-orange-deep dark:text-orange-200">{t("exam.practice")} · HSK {level}</p>
-                <h1 className="mt-1 text-3xl font-black text-ink dark:text-cream">{localized.question}</h1>
+      <section className="mx-auto max-w-5xl px-4 pb-36 pt-6 sm:px-8 md:pb-10 lg:py-10">
+        {level > 1 && !premium ? <PremiumLock featureKey="exams" /> : (
+          <>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <AppButton href="/exam" variant="ghost" className="px-4"><ArrowLeft className="h-5 w-5" /> {language === "ru" ? "Экзаменационный центр" : "Imtihon markazi"}</AppButton>
+              <span className="rounded-full bg-white px-4 py-2 text-sm font-black text-ink shadow-soft"><Clock3 className="mr-2 inline h-4 w-4 text-orange-brand" />{formatSeconds(elapsed)}</span>
+            </div>
+
+            <Card className="p-5 sm:p-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-black text-orange-deep">HSK {level} · {sectionTitle(item.skill, language)}</p>
+                  <h1 className="mt-2 text-3xl font-black text-ink">{language === "ru" ? template.titleRu : template.titleUz}</h1>
+                  <p className="mt-2 text-sm font-semibold text-stone-500">{index + 1}/{items.length} · {language === "ru" ? "Проходной балл 80%" : "O‘tish bali 80%"}</p>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {template.sections.map((section) => {
+                    const Icon = skillIcons[section.skill];
+                    const active = item.skill === section.skill;
+                    return <span key={section.id} title={language === "ru" ? section.titleRu : section.titleUz} className={`flex h-10 w-10 items-center justify-center rounded-2xl ${active ? "bg-orange-brand text-white" : "bg-cream text-stone-400"}`}><Icon className="h-4 w-4" /></span>;
+                  })}
+                </div>
               </div>
-              <span className="text-sm font-black text-stone-500 dark:text-stone-300">{index + 1}/{questions.length}</span>
-            </div>
-            <div className="h-3 rounded-full bg-cream shadow-inner dark:bg-white/10">
-              <div className="h-3 rounded-full bg-gradient-to-r from-orange-brand to-amber-300" style={{ width: `${Math.round(((index + 1) / questions.length) * 100)}%` }} />
-            </div>
-            <div className="my-8 rounded-[2rem] bg-cream p-7 text-center shadow-soft dark:bg-obsidian/60">
-              {question.type === "listening" ? (
-                <button onClick={speak} className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-brand text-white shadow-glow">
-                  <Volume2 className="h-8 w-8" />
+
+              <div className="mt-5 h-3 overflow-hidden rounded-full bg-cream">
+                <div className="h-full rounded-full bg-gradient-to-r from-orange-brand to-amber-300" style={{ width: `${Math.round(((index + 1) / items.length) * 100)}%` }} />
+              </div>
+
+              <div className="mt-7">
+                {item.kind === "listening" ? (
+                  <ChoiceQuestion
+                    item={item}
+                    language={language}
+                    selected={choiceAnswers[item.id]}
+                    onSelect={(value) => setChoiceAnswers((current) => ({ ...current, [item.id]: value }))}
+                    onPlay={() => speak(item.source.audioTextZh)}
+                  />
+                ) : item.kind === "reading" ? (
+                  <ChoiceQuestion
+                    item={item}
+                    language={language}
+                    selected={choiceAnswers[item.id]}
+                    onSelect={(value) => setChoiceAnswers((current) => ({ ...current, [item.id]: value }))}
+                  />
+                ) : item.kind === "speaking" ? (
+                  <OpenQuestion item={item} language={language} value={openAnswers[item.id] ?? ""} onChange={(value) => setOpenAnswers((current) => ({ ...current, [item.id]: value }))} />
+                ) : (
+                  <OpenQuestion item={item} language={language} value={openAnswers[item.id] ?? ""} onChange={(value) => setOpenAnswers((current) => ({ ...current, [item.id]: value }))} />
+                )}
+              </div>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-between">
+                <button disabled={index === 0} onClick={() => setIndex((value) => Math.max(0, value - 1))} className="min-h-12 rounded-full border border-orange-soft bg-white px-6 py-3 text-sm font-black text-ink disabled:opacity-40">
+                  {language === "ru" ? "Назад" : "Orqaga"}
                 </button>
-              ) : null}
-              <p className="text-6xl font-black text-ink dark:text-cream">{question.promptChinese}</p>
-              {question.type !== "pinyin" ? <p className="mt-3 text-xl font-black text-orange-brand">{question.promptPinyin}</p> : null}
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {localized.options.map((option) => {
-                const selected = answers[question.id] === option;
-                return (
-                  <button
-                    key={option}
-                    onClick={() => setAnswers((current) => ({ ...current, [question.id]: option }))}
-                    className={`rounded-4xl border p-4 text-left text-sm font-black shadow-soft transition hover:-translate-y-0.5 ${
-                      selected ? "border-orange-brand bg-orange-soft text-orange-deep" : "border-white/70 bg-white/80 text-ink dark:border-white/10 dark:bg-white/10 dark:text-cream"
-                    }`}
-                  >
-                    {option}
+                {index === items.length - 1 ? (
+                  <button disabled={submitting} onClick={() => void submitExam()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-orange-brand px-7 py-3 text-sm font-black text-white shadow-card disabled:opacity-50">
+                    <Send className="h-4 w-4" /> {submitting ? (language === "ru" ? "Сохраняется..." : "Saqlanmoqda...") : (language === "ru" ? "Завершить экзамен" : "Imtihonni yakunlash")}
                   </button>
-                );
-              })}
-            </div>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-7 flex flex-col justify-between gap-3 sm:flex-row">
-              <button disabled={index === 0} onClick={() => setIndex((value) => Math.max(0, value - 1))} className="rounded-full bg-white/80 px-5 py-3 text-sm font-black text-ink shadow-soft disabled:opacity-40 dark:bg-white/10 dark:text-cream">{t("common.back")}</button>
-              {index + 1 === questions.length ? (
-                <button disabled={!unlocked} onClick={submit} className="rounded-full bg-gradient-to-r from-orange-brand to-orange-hot px-6 py-3 text-sm font-black text-white shadow-card disabled:opacity-45">{t("common.submit")}</button>
-              ) : (
-                <button onClick={() => setIndex((value) => Math.min(questions.length - 1, value + 1))} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-brand to-orange-hot px-6 py-3 text-sm font-black text-white shadow-card">{t("common.next")} <ArrowRight className="h-4 w-4" /></button>
-              )}
-            </motion.div>
-          </div>
-        ) : null}
+                ) : (
+                  <button onClick={() => setIndex((value) => Math.min(items.length - 1, value + 1))} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-orange-brand px-7 py-3 text-sm font-black text-white shadow-card">
+                    {language === "ru" ? "Далее" : "Keyingi"} <ArrowRight className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </Card>
+          </>
+        )}
       </section>
     </ProtectedRoute>
+  );
+}
+
+function ChoiceQuestion({
+  item,
+  language,
+  selected,
+  onSelect,
+  onPlay
+}: {
+  item: ChoiceItem;
+  language: AppLanguage;
+  selected?: string;
+  onSelect: (value: string) => void;
+  onPlay?: () => void;
+}) {
+  const question = item.question;
+  return (
+    <>
+      {item.kind === "listening" ? (
+        <div className="rounded-[1.8rem] bg-orange-50 p-6 text-center">
+          <button onClick={onPlay} className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-brand text-white shadow-glow"><Volume2 className="h-7 w-7" /></button>
+          <p className="mt-4 text-sm font-bold text-stone-600">{language === "ru" ? item.source.speakerHintRu : item.source.speakerHintUz}</p>
+          <p className="mt-2 text-xs font-black text-orange-deep">{language === "ru" ? "Текст откроется после завершения экзамена." : "Matn imtihon tugagandan keyin ko‘rsatiladi."}</p>
+        </div>
+      ) : (
+        <div className="rounded-[1.8rem] bg-cream p-5 sm:p-7">
+          <p className="text-2xl font-black leading-10 text-ink sm:text-3xl">{item.source.passageZh}</p>
+        </div>
+      )}
+      <h2 className="mt-6 text-2xl font-black text-ink">{language === "ru" ? question.questionRu : question.questionUz}</h2>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {question.options.map((option) => (
+          <button key={option.id} onClick={() => onSelect(option.id)} className={`min-h-14 rounded-3xl border px-5 py-4 text-left text-sm font-black transition ${selected === option.id ? "border-orange-brand bg-orange-soft text-orange-deep" : "border-stone-200 bg-white text-ink hover:border-orange-soft"}`}>
+            {optionText(option, language)}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function OpenQuestion({ item, language, value, onChange }: { item: OpenItem; language: AppLanguage; value: string; onChange: (value: string) => void }) {
+  const speaking = item.kind === "speaking";
+  const title = speaking
+    ? language === "ru" ? item.source.titleRu : item.source.titleUz
+    : language === "ru" ? item.source.titleRu : item.source.titleUz;
+  const instruction = speaking
+    ? language === "ru" ? item.source.instructionRu : item.source.instructionUz
+    : language === "ru" ? item.source.promptRu : item.source.promptUz;
+  return (
+    <>
+      <div className="rounded-[1.8rem] bg-cream p-5 sm:p-7">
+        <p className="text-xs font-black uppercase text-orange-deep">{title}</p>
+        <h2 className="mt-2 text-2xl font-black leading-9 text-ink">{instruction}</h2>
+        {speaking ? (
+          <div className="mt-5 rounded-3xl bg-white p-5">
+            <p className="text-xl font-black leading-9 text-ink">{item.source.textZh}</p>
+          </div>
+        ) : item.source.instructionZh ? <p className="mt-4 text-xl font-black text-ink">{item.source.instructionZh}</p> : null}
+      </div>
+      <label className="mt-5 block">
+        <span className="mb-2 block text-sm font-black text-ink">{language === "ru" ? "Ответ на китайском" : "Xitoycha javob"}</span>
+        <textarea
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          rows={speaking ? 5 : 7}
+          placeholder={language === "ru" ? "Введите ответ китайскими иероглифами..." : "Javobni xitoy ierogliflarida yozing..."}
+          className="min-h-36 w-full resize-y rounded-[1.6rem] border border-orange-soft bg-white px-5 py-4 text-lg font-bold leading-8 text-ink outline-none focus:border-orange-brand"
+        />
+      </label>
+      <p className="mt-2 text-xs font-bold text-stone-500">
+        {language === "ru" ? "Пустой ответ получает 0 баллов. Скопированный исходный текст не получает полный балл." : "Bo‘sh javob 0 ball oladi. Asl matnni ko‘chirib yozish to‘liq ball bermaydi."}
+      </p>
+    </>
   );
 }

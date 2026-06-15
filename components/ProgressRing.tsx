@@ -6,7 +6,7 @@ export function ProgressRing({ value, label, size = 116 }: { value: number; labe
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-        <circle cx="50" cy="50" r={radius} stroke="currentColor" strokeWidth="10" fill="none" className="text-white/55 dark:text-white/10" />
+        <circle cx="50" cy="50" r={radius} stroke="currentColor" strokeWidth="10" fill="none" className="text-white/55" />
         <circle
           cx="50"
           cy="50"
@@ -21,8 +21,8 @@ export function ProgressRing({ value, label, size = 116 }: { value: number; labe
         />
       </svg>
       <div className="absolute text-center">
-        <p className="text-2xl font-black text-ink dark:text-cream">{value}%</p>
-        {label ? <p className="text-[10px] font-black uppercase text-stone-500 dark:text-stone-300">{label}</p> : null}
+        <p className="text-2xl font-black text-ink">{value}%</p>
+        {label ? <p className="text-[10px] font-black uppercase text-stone-500">{label}</p> : null}
       </div>
     </div>
   );

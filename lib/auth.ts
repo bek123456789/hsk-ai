@@ -1,5 +1,6 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { AppLanguage, AuthUser, HSKLevel } from "@/types";
+import { isPremiumProfile } from "@/utils/premium";
+import type { AppLanguage, AuthUser, HSKLevel, SubscriptionStatus } from "@/types";
 
 type ProfileRow = {
   id: string;
@@ -8,6 +9,22 @@ type ProfileRow = {
   current_hsk_level: number | null;
   preferred_language: string | null;
   premium: boolean | null;
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
+  subscription_status?: SubscriptionStatus | null;
+  subscription_plan?: "monthly" | "yearly" | null;
+  stripe_price_id?: string | null;
+  current_period_end?: string | null;
+  premium_until?: string | null;
+  trial_started_at?: string | null;
+  trial_ends_at?: string | null;
+  trial_used?: boolean | null;
+  onboarding_completed?: boolean | null;
+  learning_goal?: string | null;
+  daily_goal_minutes?: number | null;
+  referral_code?: string | null;
+  referred_by?: string | null;
+  referral_bonus_days?: number | null;
   created_at: string | null;
 };
 
@@ -23,13 +40,36 @@ function supabaseErrorMessage(error: unknown) {
 }
 
 function toAuthUser(profile: ProfileRow, fallbackEmail: string): AuthUser {
+  const rawStatus = profile.subscription_status ?? (profile.premium ? "beta_premium" : "free");
+  const timedStatusExpired =
+    (rawStatus === "trialing" || rawStatus === "beta_premium") &&
+    Boolean(profile.premium_until) &&
+    new Date(profile.premium_until as string).getTime() <= Date.now();
+  const subscriptionStatus = timedStatusExpired ? "free" : rawStatus;
+
   return {
     id: profile.id,
     email: profile.email ?? fallbackEmail,
-    name: profile.name ?? fallbackEmail.split("@")[0] ?? "HSK AI",
+    name: profile.name ?? fallbackEmail.split("@")[0] ?? "HanziFlow AI",
     currentHSKLevel: ((profile.current_hsk_level ?? 1) as HSKLevel),
     createdAt: profile.created_at ?? new Date().toISOString(),
-    premium: Boolean(profile.premium)
+    premium: isPremiumProfile(profile),
+    stripeCustomerId: profile.stripe_customer_id ?? null,
+    stripeSubscriptionId: profile.stripe_subscription_id ?? null,
+    subscriptionStatus,
+    subscriptionPlan: profile.subscription_plan ?? null,
+    stripePriceId: profile.stripe_price_id ?? null,
+    currentPeriodEnd: profile.current_period_end ?? null,
+    premiumUntil: profile.premium_until ?? null,
+    trialStartedAt: profile.trial_started_at ?? null,
+    trialEndsAt: profile.trial_ends_at ?? null,
+    trialUsed: profile.trial_used ?? false,
+    onboardingCompleted: profile.onboarding_completed ?? undefined,
+    learningGoal: profile.learning_goal ?? null,
+    dailyGoalMinutes: profile.daily_goal_minutes ?? null,
+    referralCode: profile.referral_code ?? null,
+    referredBy: profile.referred_by ?? null,
+    referralBonusDays: profile.referral_bonus_days ?? 0
   };
 }
 
@@ -42,6 +82,7 @@ export async function upsertProfile(input: { id: string; email: string; name: st
     current_hsk_level: 1,
     preferred_language: input.preferredLanguage ?? "uz",
     premium: false,
+    subscription_status: "free",
     updated_at: new Date().toISOString()
   };
 
@@ -66,11 +107,38 @@ export async function getCurrentUserProfile() {
     return upsertProfile({
       id: user.id,
       email: user.email,
-      name: user.user_metadata?.name ?? user.email.split("@")[0] ?? "HSK AI"
+      name: user.user_metadata?.name ?? user.email.split("@")[0] ?? "HanziFlow AI"
     });
   }
 
   return toAuthUser(data as ProfileRow, user.email);
+}
+
+export async function updateCurrentUserProfile(input: {
+  id: string;
+  email: string;
+  name: string;
+  currentHSKLevel: HSKLevel;
+  dailyGoalMinutes: number;
+  preferredLanguage: AppLanguage;
+}) {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({
+      name: input.name,
+      current_hsk_level: input.currentHSKLevel,
+      daily_goal_minutes: input.dailyGoalMinutes,
+      preferred_language: input.preferredLanguage,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", input.id)
+    .select("*")
+    .maybeSingle();
+
+  if (error) throw new Error(supabaseErrorMessage(error));
+  if (!data) throw new Error("Profil ma’lumotlari yangilanmadi.");
+  return toAuthUser(data as ProfileRow, input.email);
 }
 
 export async function registerWithSupabase(input: { name: string; email: string; password: string; preferredLanguage?: AppLanguage }) {

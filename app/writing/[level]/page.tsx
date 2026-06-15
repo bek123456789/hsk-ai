@@ -28,27 +28,27 @@ export default function WritingPage() {
     <ProtectedRoute>
       <section className="premium-grid mx-auto max-w-6xl px-5 pb-36 pt-10 sm:px-8 md:pb-10 lg:py-14">
         <div className="mb-8 max-w-3xl">
-          <p className="text-sm font-black text-orange-deep dark:text-orange-200">HSK {level}</p>
-          <h1 className="mt-2 text-5xl font-black text-ink dark:text-cream">{t("writing.title")}</h1>
-          <p className="mt-4 text-lg font-semibold text-stone-600 dark:text-stone-300">{t("writing.subtitle")}</p>
+          <p className="text-sm font-black text-orange-deep">HSK {level}</p>
+          <h1 className="mt-2 text-5xl font-black text-ink">{t("writing.title")}</h1>
+          <p className="mt-4 text-lg font-semibold text-stone-600">{t("writing.subtitle")}</p>
         </div>
         {word ? (
           <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-            <div className="rounded-[2.5rem] bg-white/84 p-8 text-center shadow-premium dark:bg-white/10">
-              <p className="text-[7rem] font-black leading-none text-ink dark:text-cream">{word.chinese}</p>
+            <div className="rounded-[2.5rem] bg-white/84 p-8 text-center shadow-premium">
+              <p className="text-[7rem] font-black leading-none text-ink">{word.chinese}</p>
               <p className="mt-4 text-2xl font-black text-orange-brand">{word.pinyin}</p>
-              <p className="mt-3 text-xl font-bold text-stone-600 dark:text-stone-300">{getWordTranslation(word, language)}</p>
-              <div className="mt-7 rounded-[2rem] bg-cream p-5 shadow-soft dark:bg-white/8">
+              <p className="mt-3 text-xl font-bold text-stone-600">{getWordTranslation(word, language)}</p>
+              <div className="mt-7 rounded-[2rem] bg-cream p-5 shadow-soft">
                 <PenLine className="mx-auto mb-3 h-8 w-8 text-orange-brand" />
-                <p className="font-black text-ink dark:text-cream">{t("writing.stroke")}</p>
+                <p className="font-black text-ink">{t("writing.stroke")}</p>
               </div>
             </div>
-            <div className="rounded-[2.5rem] bg-white/84 p-6 shadow-premium dark:bg-white/10">
+            <div className="rounded-[2.5rem] bg-white/84 p-6 shadow-premium">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <p className="font-black text-ink dark:text-cream">{t("writing.draw")}</p>
-                <button onClick={() => setTraced(false)} className="flex h-11 w-11 items-center justify-center rounded-full bg-cream text-stone-600 shadow-soft dark:bg-white/8 dark:text-stone-300"><Eraser className="h-5 w-5" /></button>
+                <p className="font-black text-ink">{t("writing.draw")}</p>
+                <button onClick={() => setTraced(false)} className="flex h-11 w-11 items-center justify-center rounded-full bg-cream text-stone-600 shadow-soft"><Eraser className="h-5 w-5" /></button>
               </div>
-              <button onClick={() => setTraced(true)} className="relative grid aspect-square w-full place-items-center overflow-hidden rounded-[2rem] border-2 border-dashed border-orange-brand/30 bg-cream shadow-inner dark:bg-obsidian/60">
+              <button onClick={() => setTraced(true)} className="relative grid aspect-square w-full place-items-center overflow-hidden rounded-[2rem] border-2 border-dashed border-orange-brand/30 bg-cream shadow-inner">
                 <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
                   <span className="border-r border-b border-orange-brand/20" />
                   <span className="border-b border-orange-brand/20" />
@@ -64,8 +64,8 @@ export default function WritingPage() {
             </div>
           </div>
         ) : (
-          <div className="rounded-[2.5rem] bg-white/84 p-10 text-center shadow-premium dark:bg-white/10">
-            <h2 className="text-3xl font-black text-ink dark:text-cream">{t("review.empty")}</h2>
+          <div className="rounded-[2.5rem] bg-white/84 p-10 text-center shadow-premium">
+            <h2 className="text-3xl font-black text-ink">{t("review.empty")}</h2>
           </div>
         )}
       </section>

@@ -1,5 +1,5 @@
-import { HeroSection } from "@/components/HeroSection";
+import { ClosedBetaLanding } from "@/components/ClosedBetaLanding";
 
 export default function HomePage() {
-  return <HeroSection />;
+  return <ClosedBetaLanding />;
 }

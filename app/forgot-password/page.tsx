@@ -6,8 +6,8 @@ import { AuthShell } from "@/components/AuthShell";
 export default function ForgotPasswordPage() {
   return (
     <AuthShell
-      title="HSK AI kirishini tiklash"
-      subtitle="Supabase parolni tiklash emailini yuboradi va keyinchalik to‘liq hisob boshqaruviga ulanadi."
+      title="HanziFlow AI kirishini tiklash"
+      subtitle="Parolni tiklash havolasini emailingizga yuboramiz."
       footer={
         <>
           Esladingizmi?{" "}
@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
         </>
       }
     >
-      <Suspense fallback={<div className="rounded-3xl bg-cream p-6 text-sm font-black text-stone-500 dark:bg-obsidian/60 dark:text-stone-300">Yuklanmoqda...</div>}>
+      <Suspense fallback={<div className="rounded-3xl bg-cream p-6 text-sm font-black text-stone-500">Yuklanmoqda...</div>}>
         <AuthForm mode="forgot" />
       </Suspense>
     </AuthShell>

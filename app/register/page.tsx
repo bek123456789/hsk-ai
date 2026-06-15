@@ -6,8 +6,8 @@ import { AuthShell } from "@/components/AuthShell";
 export default function RegisterPage() {
   return (
     <AuthShell
-      title="HSK AI beta hisobingizni yarating"
-      subtitle="HSK 1 dan boshlang, progressingizni brauzerda saqlang va beta sinov uchun o‘quv profilini tayyorlang."
+      title="HanziFlow AI hisobingizni yarating"
+      subtitle="Xitoy tilini HSK bo‘yicha AI yordamchi bilan o‘rganishni boshlang."
       footer={
         <>
           Hisobingiz bormi?{" "}
@@ -15,7 +15,7 @@ export default function RegisterPage() {
         </>
       }
     >
-      <Suspense fallback={<div className="rounded-3xl bg-cream p-6 text-sm font-black text-stone-500 dark:bg-obsidian/60 dark:text-stone-300">Yuklanmoqda...</div>}>
+      <Suspense fallback={<div className="rounded-3xl bg-cream p-6 text-sm font-black text-stone-500">Yuklanmoqda...</div>}>
         <AuthForm mode="register" />
       </Suspense>
     </AuthShell>

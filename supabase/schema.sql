@@ -7,9 +7,38 @@ create table if not exists public.profiles (
   current_hsk_level int default 1,
   preferred_language text default 'uz',
   premium boolean default false,
+  stripe_customer_id text,
+  stripe_subscription_id text,
+  subscription_status text default 'free',
+  subscription_plan text,
+  stripe_price_id text,
+  current_period_end timestamptz,
+  premium_until timestamptz,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+alter table public.profiles add column if not exists stripe_customer_id text;
+alter table public.profiles add column if not exists stripe_subscription_id text;
+alter table public.profiles add column if not exists subscription_status text default 'free';
+alter table public.profiles add column if not exists subscription_plan text;
+alter table public.profiles add column if not exists stripe_price_id text;
+alter table public.profiles add column if not exists current_period_end timestamptz;
+alter table public.profiles add column if not exists premium_until timestamptz;
+alter table public.profiles add column if not exists updated_at timestamptz default now();
+alter table public.profiles add column if not exists trial_started_at timestamptz;
+alter table public.profiles add column if not exists trial_ends_at timestamptz;
+alter table public.profiles add column if not exists trial_used boolean default false;
+alter table public.profiles add column if not exists onboarding_completed boolean default false;
+alter table public.profiles add column if not exists learning_goal text;
+alter table public.profiles add column if not exists daily_goal_minutes int default 10;
+alter table public.profiles add column if not exists referral_code text;
+alter table public.profiles add column if not exists referred_by text;
+alter table public.profiles add column if not exists referral_bonus_days int default 0;
+
+create unique index if not exists profiles_referral_code_key
+on public.profiles (referral_code)
+where referral_code is not null;
 
 create or replace function public.handle_new_user_profile()
 returns trigger
@@ -17,13 +46,14 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, name, current_hsk_level, preferred_language, premium)
+  insert into public.profiles (id, email, name, current_hsk_level, preferred_language, premium, onboarding_completed)
   values (
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
     1,
     'uz',
+    false,
     false
   )
   on conflict (id) do update set
@@ -80,6 +110,15 @@ create table if not exists public.exam_results (
   created_at timestamptz default now()
 );
 
+alter table public.exam_results
+add column if not exists level int,
+add column if not exists overall_score int default 0,
+add column if not exists passing_score int default 80,
+add column if not exists section_scores jsonb default '{}'::jsonb,
+add column if not exists weak_skills jsonb default '[]'::jsonb,
+add column if not exists recommended_lesson_ids jsonb default '[]'::jsonb,
+add column if not exists answers jsonb default '[]'::jsonb;
+
 create table if not exists public.weak_words (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade,
@@ -113,6 +152,28 @@ create table if not exists public.certificates (
   created_at timestamptz default now()
 );
 
+create table if not exists public.ai_usage_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  usage_type text not null,
+  count int default 1,
+  date date default current_date,
+  created_at timestamptz default now()
+);
+
+create index if not exists ai_usage_logs_user_date_idx
+on public.ai_usage_logs (user_id, date, usage_type);
+
+create table if not exists public.app_errors (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  event_type text not null,
+  message text not null,
+  metadata jsonb default '{}'::jsonb,
+  page_url text,
+  created_at timestamptz default now()
+);
+
 alter table public.profiles enable row level security;
 alter table public.user_progress enable row level security;
 alter table public.quiz_results enable row level security;
@@ -120,6 +181,8 @@ alter table public.exam_results enable row level security;
 alter table public.weak_words enable row level security;
 alter table public.mistakes enable row level security;
 alter table public.certificates enable row level security;
+alter table public.ai_usage_logs enable row level security;
+alter table public.app_errors enable row level security;
 
 drop policy if exists "profiles_select_own" on public.profiles;
 drop policy if exists "profiles_insert_own" on public.profiles;
@@ -190,3 +253,15 @@ create policy "certificates_select_own" on public.certificates for select using 
 create policy "certificates_insert_own" on public.certificates for insert with check (auth.uid() = user_id);
 create policy "certificates_update_own" on public.certificates for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "certificates_delete_own" on public.certificates for delete using (auth.uid() = user_id);
+
+drop policy if exists "ai_usage_logs_select_own" on public.ai_usage_logs;
+drop policy if exists "ai_usage_logs_insert_own" on public.ai_usage_logs;
+
+create policy "ai_usage_logs_select_own" on public.ai_usage_logs for select using (auth.uid() = user_id);
+create policy "ai_usage_logs_insert_own" on public.ai_usage_logs for insert with check (auth.uid() = user_id);
+
+drop policy if exists "app_errors_select_own" on public.app_errors;
+drop policy if exists "app_errors_insert_own" on public.app_errors;
+
+create policy "app_errors_select_own" on public.app_errors for select using (auth.uid() = user_id);
+create policy "app_errors_insert_own" on public.app_errors for insert with check (auth.uid() = user_id);

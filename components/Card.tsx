@@ -10,7 +10,7 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.45, ease: "easeOut" }}
-      className={`rounded-5xl border border-white/75 bg-white/82 shadow-premium backdrop-blur-xl dark:border-white/10 dark:bg-white/10 ${className}`}
+      className={`rounded-[2rem] border border-white/85 bg-white/88 shadow-premium backdrop-blur-xl ${className}`}
     >
       {children}
     </motion.div>

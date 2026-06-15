@@ -1,4 +1,5 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getVocabularyEntryById } from "@/data/hsk/contentIndex";
 import type { ExamAttempt, HSKLevel, MistakeRecord, QuizResult, WordReviewState } from "@/types";
 
 type WordProgressInput = {
@@ -114,18 +115,37 @@ export async function saveExamResult(input: ExamResultInput) {
   if (!userId) return localProgressState();
 
   const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.from("exam_results").insert({
+  const score = input.attempt.overallScore ?? input.attempt.accuracy;
+  const detailedPayload = {
     user_id: userId,
     hsk_level: input.attempt.hskLevel,
     score: input.attempt.score,
     total_questions: input.attempt.total,
-    accuracy: input.attempt.accuracy,
+    accuracy: score,
     time_spent_seconds: input.attempt.timeSpentSeconds,
-    passed: input.attempt.accuracy >= 70
-  });
+    level: input.attempt.hskLevel,
+    overall_score: score,
+    passed: input.attempt.passed ?? score >= 80,
+    passing_score: input.attempt.passingScore ?? 80,
+    section_scores: input.attempt.sections ?? {},
+    weak_skills: input.attempt.weakSkills ?? [],
+    recommended_lesson_ids: input.attempt.recommendedLessonIds ?? [],
+    answers: input.attempt.answers,
+    created_at: input.attempt.completedAt
+  };
+  const { error: detailedError } = await supabase.from("exam_results").insert(detailedPayload);
+  const { error } = detailedError ? await supabase.from("exam_results").insert({
+    user_id: userId,
+    hsk_level: input.attempt.hskLevel,
+    score: input.attempt.score,
+    total_questions: input.attempt.total,
+    accuracy: score,
+    time_spent_seconds: input.attempt.timeSpentSeconds,
+    passed: input.attempt.passed ?? score >= 80
+  }) : { error: null };
   if (error) throw error;
 
-  if (input.attempt.accuracy >= 70) {
+  if (input.attempt.passed ?? score >= 80) {
     const { data: existing, error: existingError } = await supabase
       .from("certificates")
       .select("id")
@@ -138,8 +158,8 @@ export async function saveExamResult(input: ExamResultInput) {
       const { error: certificateError } = await supabase.from("certificates").insert({
         user_id: userId,
         hsk_level: input.attempt.hskLevel,
-        score: input.attempt.accuracy,
-        certificate_code: `HSKAI-${userId.slice(0, 8)}-${input.attempt.hskLevel}-${Date.now()}`
+        score,
+        certificate_code: `HANZIFLOW-${userId.slice(0, 8)}-${input.attempt.hskLevel}-${Date.now()}`
       });
       if (certificateError) throw certificateError;
     }
@@ -180,6 +200,18 @@ export async function saveMistake(input: MistakeInput) {
     explanation_ru: input.mistake.explanation
   });
   if (error) throw error;
+}
+
+export async function saveMistakeForCurrentUser(mistake: MistakeRecord) {
+  try {
+    const supabase = getSupabaseBrowserClient();
+    const { data } = await supabase.auth.getSession();
+    const userId = data.session?.user.id;
+    if (!userId) return;
+    await saveMistake({ userId, mistake });
+  } catch {
+    // Mistake history remains available in LocalStorage if the optional table is absent.
+  }
 }
 
 export async function getWeakWords(userId?: string) {
@@ -247,7 +279,7 @@ export async function migrateLocalProgressToSupabase(userId: string) {
       saveWordProgress({
         userId,
         wordId: review.wordId,
-        hskLevel: 1,
+        hskLevel: getVocabularyEntryById(review.wordId)?.level ?? 1,
         status: review.status,
         correctCount: review.correctCount,
         wrongCount: review.wrongCount,
@@ -258,8 +290,8 @@ export async function migrateLocalProgressToSupabase(userId: string) {
     )
   );
 
-  await Promise.all((state.knownWordIds ?? []).map((wordId) => saveWordProgress({ userId, wordId, hskLevel: 1, status: "review", correctCount: 1 })));
-  await Promise.all((state.weakWordIds ?? []).map((wordId) => saveWeakWord({ userId, wordId, hskLevel: 1, reason: "local" })));
+  await Promise.all((state.knownWordIds ?? []).map((wordId) => saveWordProgress({ userId, wordId, hskLevel: getVocabularyEntryById(wordId)?.level ?? 1, status: "review", correctCount: 1 })));
+  await Promise.all((state.weakWordIds ?? []).map((wordId) => saveWeakWord({ userId, wordId, hskLevel: getVocabularyEntryById(wordId)?.level ?? 1, reason: "local" })));
   await Promise.all((state.quizResults ?? []).map((result) => saveQuizResult({ userId, level: result.level, score: result.score, total: result.total })));
   await Promise.all((state.examAttempts ?? []).map((attempt) => saveExamResult({ userId, attempt })));
   await Promise.all((state.mistakes ?? []).map((mistake) => saveMistake({ userId, mistake })));

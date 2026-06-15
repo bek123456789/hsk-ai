@@ -3,11 +3,11 @@ import { motion } from "framer-motion";
 export function QuizOption({ option, selected, correct, disabled, onClick }: { option: string; selected: boolean; correct: boolean; disabled: boolean; onClick: () => void }) {
   const stateClass = selected
     ? correct
-      ? "border-emerald-400 bg-mint text-emerald-800 shadow-[0_18px_50px_rgba(16,185,129,0.2)]"
+      ? "border-orange-brand bg-orange-soft text-orange-deep shadow-[0_18px_50px_rgba(255,112,31,0.18)]"
       : "border-red-300 bg-red-50 text-red-700 shadow-[0_18px_50px_rgba(239,68,68,0.15)]"
     : disabled && correct
-      ? "border-emerald-400 bg-mint text-emerald-800"
-      : "border-white/80 bg-white/82 text-ink hover:border-orange-brand hover:bg-orange-soft dark:border-white/10 dark:bg-white/10 dark:text-cream dark:hover:bg-white/15";
+      ? "border-orange-brand bg-orange-soft text-orange-deep"
+      : "border-white/80 bg-white/82 text-ink hover:border-orange-brand hover:bg-orange-soft";
 
   return (
     <motion.button
