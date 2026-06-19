@@ -63,12 +63,25 @@ function mergeLessonRecord(local: LessonProgressRecord | undefined, remote: Less
   const localRatio = local.quizTotal > 0 ? local.quizScore / local.quizTotal : 0;
   const remoteRatio = remote.quizTotal > 0 ? remote.quizScore / remote.quizTotal : 0;
   const quizSource = remoteRatio > localRatio ? remote : local;
+  const completedSections = Array.from(new Set([...local.completedSections, ...remote.completedSections]));
+  const sections = { ...(remote.sections ?? {}), ...(local.sections ?? {}) };
+  for (const section of completedSections) {
+    if (["vocabulary", "grammar", "reading", "listening", "speaking", "miniTest"].includes(section)) {
+      sections[section as keyof NonNullable<LessonProgressRecord["sections"]>] = true;
+    }
+  }
+  const markedDone = local.markedDone || remote.markedDone || local.done === true || remote.done === true || local.progress === 100 || remote.progress === 100;
   return {
     lessonId: remote.lessonId,
-    completedSections: Array.from(new Set([...local.completedSections, ...remote.completedSections])),
+    level: local.level ?? remote.level,
+    completedSections,
+    sections,
     quizScore: quizSource.quizScore,
     quizTotal: quizSource.quizTotal,
-    markedDone: local.markedDone || remote.markedDone,
+    progress: markedDone ? 100 : Math.max(local.progress ?? 0, remote.progress ?? 0),
+    markedDone,
+    done: markedDone,
+    completedAt: latestDate(local.completedAt, remote.completedAt) || undefined,
     updatedAt: latestDate(local.updatedAt, remote.updatedAt)
   };
 }
@@ -139,29 +152,54 @@ async function hydrateLessons(userId: string) {
   for (const raw of data as JsonRecord[]) {
     const lessonId = text(raw.lesson_id);
     if (!lessonId) continue;
+    const completedSections = Array.isArray(raw.completed_sections) ? raw.completed_sections.filter((item): item is string => typeof item === "string").map((item) => item === "quiz" ? "miniTest" : item) : [];
+    const rawSections = isRecord(raw.sections) ? raw.sections : {};
+    const sections: LessonProgressRecord["sections"] = {};
+    for (const section of ["vocabulary", "grammar", "reading", "listening", "speaking", "miniTest"] as const) {
+      sections[section] = rawSections[section] === true || completedSections.includes(section);
+    }
+    const markedDone = booleanValue(raw.done) || booleanValue(raw.completed) || numberValue(raw.progress) === 100;
     const remote: LessonProgressRecord = {
       lessonId,
-      completedSections: Array.isArray(raw.completed_sections) ? raw.completed_sections.filter((item): item is string => typeof item === "string") : [],
+      level: numberValue(raw.level) || undefined,
+      completedSections,
+      sections,
       quizScore: numberValue(raw.quiz_score),
       quizTotal: numberValue(raw.quiz_total),
-      markedDone: booleanValue(raw.completed),
+      progress: numberValue(raw.progress, markedDone ? 100 : 0),
+      markedDone,
+      done: markedDone,
+      completedAt: text(raw.completed_at) || undefined,
       updatedAt: text(raw.updated_at, new Date(0).toISOString())
     };
     merged[lessonId] = mergeLessonRecord(merged[lessonId], remote);
   }
   window.localStorage.setItem(lessonKey, JSON.stringify(merged));
-  await supabase.from("lesson_progress").upsert(
-    Object.values(merged).map((record) => ({
+  const modernPayload = Object.values(merged).map((record) => ({
       user_id: userId,
       lesson_id: record.lessonId,
+      level: record.level,
       completed_sections: record.completedSections,
       quiz_score: record.quizScore,
       quiz_total: record.quizTotal,
-      completed: record.markedDone,
+      completed: record.markedDone || record.done === true,
+      progress: record.progress ?? (record.markedDone || record.done ? 100 : 0),
+      done: record.markedDone || record.done === true,
+      sections: record.sections ?? {},
+      completed_at: record.completedAt ?? null,
       updated_at: record.updatedAt || new Date().toISOString()
-    })),
-    { onConflict: "user_id,lesson_id" }
-  );
+    }));
+  const legacyPayload = Object.values(merged).map((record) => ({
+    user_id: userId,
+    lesson_id: record.lessonId,
+    completed_sections: record.completedSections,
+    quiz_score: record.quizScore,
+    quiz_total: record.quizTotal,
+    completed: record.markedDone || record.done === true,
+    updated_at: record.updatedAt || new Date().toISOString()
+  }));
+  const { error: modernError } = await supabase.from("lesson_progress").upsert(modernPayload, { onConflict: "user_id,lesson_id" });
+  if (modernError) await supabase.from("lesson_progress").upsert(legacyPayload, { onConflict: "user_id,lesson_id" });
 }
 
 async function hydrateActivity(userId: string, kind: Extract<LearningProgressKind, "reading" | "listening">) {

@@ -126,7 +126,7 @@ export type WordReviewState = {
 
 export type SkillType = "reading" | "listening" | "writing" | "speaking";
 
-export type MistakeSource = "quiz" | "flashcard" | "exam" | "listening" | "reading" | "writing" | "speaking" | "grammar" | "game" | "dictation" | "sentence-builder" | "ai";
+export type MistakeSource = "quiz" | "flashcard" | "exam" | "listening" | "reading" | "writing" | "speaking" | "grammar" | "game" | "dictation" | "sentence-builder" | "tone-trainer" | "shadowing" | "roleplay" | "ai";
 
 export type MistakeRecord = {
   id: string;
@@ -216,7 +216,7 @@ export type GameResult = {
   completedAt: string;
 };
 
-export type LearningActivityType = "mini-lesson" | "listening-lab" | "dictation" | "sentence-builder" | "review";
+export type LearningActivityType = "mini-lesson" | "listening-lab" | "dictation" | "sentence-builder" | "review" | "tone-trainer" | "shadowing" | "sprint" | "study-plan" | "roleplay";
 
 export type LearningActivityResult = {
   id: string;

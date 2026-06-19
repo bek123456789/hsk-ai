@@ -35,7 +35,7 @@ function normalizeProgress(progress?: LessonUnlockProgress | Record<string, Less
 function progressDone(lesson: HSKLessonCurriculum, progress?: LessonUnlockProgress | Record<string, LessonProgressRecord>) {
   const normalized = normalizeProgress(progress);
   const record = normalized.lessonProgress[lesson.id];
-  return Boolean(record?.markedDone) || calculateLessonProgress(lesson, normalized.knownWordIds) === 100;
+  return Boolean(record?.markedDone || record?.done || record?.progress === 100) || calculateLessonProgress(lesson, normalized.knownWordIds) === 100;
 }
 
 export function getLessonOrder(level: HSKLevel) {

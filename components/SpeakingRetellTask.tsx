@@ -7,6 +7,7 @@ import { SpeakingResultCard } from "@/components/SpeakingResultCard";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AppLanguage } from "@/types";
 import type { HSKSpeakingTask } from "@/data/hsk/contentIndex";
+import { deterministicOpenAnswerScore, hasHanzi, localizedPrecheckMessage } from "@/utils/answerEvaluation";
 import { isSpeakingTaskDone, saveSpeakingTaskProgress, type SpeakingEvaluationResult } from "@/utils/speakingProgress";
 
 type SpeechRecognitionConstructor = new () => {
@@ -25,6 +26,50 @@ function getSpeechRecognition() {
     webkitSpeechRecognition?: SpeechRecognitionConstructor;
   };
   return maybe.SpeechRecognition ?? maybe.webkitSpeechRecognition ?? null;
+}
+
+function buildFallbackResult(task: HSKSpeakingTask, userAnswerZh: string): SpeakingEvaluationResult {
+  const scored = deterministicOpenAnswerScore({
+    answer: userAnswerZh,
+    keywordsZh: task.keywordsZh,
+    minCharacters: task.level <= 2 ? 8 : task.level <= 4 ? 20 : 35,
+    promptZh: task.textZh,
+    promptPinyin: task.textPinyin,
+    sampleAnswerZh: task.sampleAnswerZh,
+    sampleAnswerPinyin: task.sampleAnswerPinyin,
+    allowBeginnerPinyin: task.level <= 1
+  });
+  const score = scored.score;
+  const hasChinese = hasHanzi(userAnswerZh);
+  const done = score >= 75 && scored.precheck.code === "ok";
+  const meaningScore = score;
+  const grammarScore = hasChinese ? Math.max(0, score - 8) : 0;
+  const vocabularyScore = Math.max(0, score - 5);
+  const fluencyScore = hasChinese ? Math.max(0, score - 10) : 0;
+  const missingUz = done ? [] : [localizedPrecheckMessage(scored.precheck, "uz")];
+  const missingRu = done ? [] : [localizedPrecheckMessage(scored.precheck, "ru")];
+
+  return {
+    ok: true,
+    done,
+    score,
+    meaningScore,
+    grammarScore,
+    vocabularyScore,
+    fluencyScore,
+    feedbackUz: done ? "AI vaqtincha mavjud bo‘lmasa ham, javobingiz mazmuni yetarli ko‘rindi." : localizedPrecheckMessage(scored.precheck, "uz"),
+    feedbackRu: done ? "AI временно недоступен, но по локальной проверке смысл ответа достаточный." : localizedPrecheckMessage(scored.precheck, "ru"),
+    correctedAnswerZh: task.sampleAnswerZh,
+    correctedAnswerPinyin: task.sampleAnswerPinyin,
+    explanationUz: "Lokal tekshiruv xitoycha matn, uzunlik va kalit so‘zlar asosida baholaydi. AI qayta ishlaganda yanada aniq fikr olasiz.",
+    explanationRu: "Локальная проверка оценивает китайский текст, длину ответа и ключевые слова. При повторной AI-проверке отзыв будет точнее.",
+    missingPointsUz: missingUz,
+    missingPointsRu: missingRu,
+    goodPointsUz: hasChinese ? ["Javob xitoycha yozilgan."] : [],
+    goodPointsRu: hasChinese ? ["Ответ написан на китайском."] : [],
+    nextTipUz: "Talaffuz uchun namunani eshiting va qisqa javobni qayta aytib ko‘ring.",
+    nextTipRu: "Для произношения прослушайте образец и повторите короткий ответ."
+  };
 }
 
 export function SpeakingRetellTask({
@@ -78,11 +123,13 @@ export function SpeakingRetellTask({
     }
     setLoading(true);
     setError("");
+    let fallbackAllowed = false;
     try {
       const supabase = getSupabaseBrowserClient();
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       if (!token) throw new Error(language === "ru" ? "Сначала войдите в аккаунт." : "Avval tizimga kiring.");
+      fallbackAllowed = true;
       const response = await fetch("/api/speaking/evaluate", {
         method: "POST",
         headers: {
@@ -106,7 +153,23 @@ export function SpeakingRetellTask({
       setPersistedDone(payload.done);
       onEvaluated?.(payload.done);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : language === "ru" ? "AI не смог проверить ответ." : "AI javobni tekshira olmadi.");
+      if (!fallbackAllowed) {
+        setError(caught instanceof Error ? caught.message : language === "ru" ? "AI не смог проверить ответ." : "AI javobni tekshira olmadi.");
+        return;
+      }
+      const fallback = buildFallbackResult(task, answer);
+      setResult(fallback);
+      saveSpeakingTaskProgress({
+        taskId: task.id,
+        level: task.level,
+        score: fallback.score,
+        userAnswerZh: answer,
+        correctedAnswerZh: fallback.correctedAnswerZh,
+        done: fallback.done,
+        feedback: fallback
+      });
+      setPersistedDone(fallback.done);
+      onEvaluated?.(fallback.done);
     } finally {
       setLoading(false);
     }

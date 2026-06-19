@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenCheck, Bot, ClipboardList, GraduationCap, Headphones, Keyboard, MessageCircle, Mic, NotebookTabs, RefreshCcw, Sparkles, Timer, Trophy, WholeWord } from "lucide-react";
+import { BookOpenCheck, Bot, ClipboardList, Flame, GraduationCap, Headphones, Keyboard, MessageCircle, Mic, NotebookTabs, RefreshCw, RefreshCcw, Sparkles, Timer, Trophy, WholeWord } from "lucide-react";
 import { AppButton } from "@/components/AppButton";
 import { Card } from "@/components/Card";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -14,6 +14,7 @@ export default function PracticeHubPage() {
       titleRu: "Слова",
       cards: [
         { href: "/flashcard/1", icon: WholeWord, titleUz: "So‘z kartalari", titleRu: "Карточки слов", detailUz: "Yangi so‘zlarni hanzi, pinyin va tarjima bilan mustahkamlang.", detailRu: "Закрепляйте слова через ханьцзы, pinyin и перевод." },
+        { href: "/hanzi-builder", icon: Sparkles, titleUz: "Ieroglif tahlili", titleRu: "Разбор иероглифа", detailUz: "Hanzi, radikal, pinyin, misol va eslab qolish usulini ko‘ring.", detailRu: "Разбирайте ханьцзы, ключ, pinyin, пример и способ запомнить." },
         { href: "/quiz/1", icon: Trophy, titleUz: "Lug‘at testi", titleRu: "Тест слов", detailUz: "Ma’no, pinyin va iyeroglifni aralash savollar bilan tekshiring.", detailRu: "Проверяйте значение, pinyin и иероглифы в смешанных вопросах." },
         { href: "/word-of-day", icon: Sparkles, titleUz: "Kun so‘zi", titleRu: "Слово дня", detailUz: "Har kuni bitta foydali so‘z va misol gap o‘rganing.", detailRu: "Каждый день учите полезное слово и пример." }
       ]
@@ -32,6 +33,7 @@ export default function PracticeHubPage() {
       titleRu: "Аудирование",
       cards: [
         { href: "/listening", icon: Headphones, titleUz: "Tinglash mashqi", titleRu: "Практика аудирования", detailUz: "Dialog, mini hikoya va e’lonlarni tinglab tushuning.", detailRu: "Понимайте диалоги, мини-истории и объявления на слух." },
+        { href: "/tone-trainer", icon: Headphones, titleUz: "Ton mashqi", titleRu: "Тренировка тонов", detailUz: "Eshitib tonni tanlang va pinyin belgilarini mustahkamlang.", detailRu: "Слушайте и выбирайте тон, закрепляя знаки pinyin." },
         { href: "/listening-lab", icon: Headphones, titleUz: "Tinglash laboratoriyasi", titleRu: "Лаборатория аудирования", detailUz: "Qayta eshitish limiti, matn va pinyin bilan chuqurroq mashq qiling.", detailRu: "Тренируйтесь с лимитом повторов, текстом и pinyin." },
         { href: "/dictation", icon: Keyboard, titleUz: "Diktant", titleRu: "Диктант", detailUz: "Eshitgan so‘z yoki gapni hanzi yoki pinyin bilan yozing.", detailRu: "Записывайте услышанное ханьцзы или pinyin." }
       ]
@@ -50,6 +52,7 @@ export default function PracticeHubPage() {
       titleRu: "Говорение",
       cards: [
         { href: "/speaking", icon: Mic, titleUz: "Gapirish mashqi", titleRu: "Практика говорения", detailUz: "So‘z talaffuzi, matn mazmuni, dialog va kundalik vaziyatlarni mashq qiling.", detailRu: "Тренируйте произношение, пересказ, диалог и ежедневные ситуации." },
+        { href: "/shadowing", icon: RefreshCw, titleUz: "Ortimizdan takrorlang", titleRu: "Повтор за диктором", detailUz: "Gapni eshiting, takrorlang va yetishmagan so‘zlarni ko‘ring.", detailRu: "Слушайте фразу, повторяйте и смотрите пропущенные слова." },
         { href: "/roleplay", icon: MessageCircle, titleUz: "AI rol o‘yini", titleRu: "AI ролевая практика", detailUz: "Restoran, do‘kon va maktabdagi vaziyatlarni xitoycha mashq qiling.", detailRu: "Практикуйте ресторан, магазин и школу на китайском." },
         { href: "/conversation", icon: MessageCircle, titleUz: "Suhbat mashqi", titleRu: "Практика диалога", detailUz: "HSK darajangizga mos qisqa suhbatlarni davom ettiring.", detailRu: "Продолжайте короткие диалоги по уровню HSK." }
       ]
@@ -61,7 +64,10 @@ export default function PracticeHubPage() {
         { href: "/exam-simulator", icon: Trophy, titleUz: "Imtihon simulyatori", titleRu: "Симулятор экзамена", detailUz: "Tinglash, o‘qish, lug‘at va grammatika bo‘limlarini vaqt bilan bajaring.", detailRu: "Проходите аудирование, чтение, слова и грамматику с таймером." },
         { href: "/challenges", icon: Timer, titleUz: "Kunlik sinovlar", titleRu: "Челленджи", detailUz: "Tezlik, tinglash va lug‘at bo‘yicha kunlik sinovlar.", detailRu: "Дневные задания на скорость, аудирование и слова." },
         { href: "/mistake-notebook", icon: NotebookTabs, titleUz: "Xatolar daftari", titleRu: "Тетрадь ошибок", detailUz: "Test, imtihon, gapirish va diktant xatolarini qayta mashq qiling.", detailRu: "Повторяйте ошибки из тестов, экзамена, говорения и диктанта." },
+        { href: "/mistakes/loop", icon: RefreshCcw, titleUz: "Xatolarni tuzatish", titleRu: "Исправление ошибок", detailUz: "Xatoni 2 marta to‘g‘ri javob berguncha mashq qiling.", detailRu: "Повторяйте ошибку, пока не ответите правильно 2 раза." },
         { href: "/daily-plan", icon: ClipboardList, titleUz: "Bugungi reja", titleRu: "План на сегодня", detailUz: "Shaxsiy vazifalarni ketma-ket bajaring.", detailRu: "Выполняйте персональные задания по порядку." },
+        { href: "/sprint", icon: Flame, titleUz: "7 kunlik HSK Sprint", titleRu: "7-дневный HSK Sprint", detailUz: "Qisqa muddatli dars, takrorlash, listening va speaking rejasi.", detailRu: "Короткий план уроков, повторения, аудирования и говорения." },
+        { href: "/study-plan", icon: ClipboardList, titleUz: "Shaxsiy o‘quv reja", titleRu: "Персональный план", detailUz: "Vaqt, daraja va zaif ko‘nikmaga mos haftalik reja yarating.", detailRu: "Создайте недельный план по времени, уровню и слабому навыку." },
         { href: "/review", icon: RefreshCcw, titleUz: "Aqlli takrorlash", titleRu: "Умное повторение", detailUz: "Zaif so‘zlar va xatolarni SRS orqali takrorlang.", detailRu: "Повторяйте слабые слова и ошибки по SRS." },
         { href: "/ai-explainer", icon: Bot, titleUz: "AI tushuntiruvchi", titleRu: "AI-объяснение", detailUz: "So‘z, gap yoki grammatikani HSK darajangizga mos tushuntiring.", detailRu: "Разбирайте слова, предложения и грамматику по уровню HSK." }
       ]

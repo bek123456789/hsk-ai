@@ -34,6 +34,15 @@ alter table public.profiles add column if not exists trial_used boolean default 
 alter table public.profiles add column if not exists onboarding_completed boolean default false;
 alter table public.profiles add column if not exists learning_goal text;
 alter table public.profiles add column if not exists daily_goal_minutes int default 10;
+alter table public.profiles add column if not exists target_hsk_level int default 1;
+alter table public.profiles add column if not exists reminder_enabled boolean default false;
+alter table public.profiles add column if not exists reminder_time text default '19:00';
+alter table public.profiles add column if not exists review_reminder_enabled boolean default true;
+alter table public.profiles add column if not exists streak_reminder_enabled boolean default true;
+alter table public.profiles add column if not exists ui_language text default 'uz';
+alter table public.profiles add column if not exists xp int default 0;
+alter table public.profiles add column if not exists streak_count int default 0;
+alter table public.profiles add column if not exists last_active_at timestamptz;
 alter table public.profiles add column if not exists referral_code text;
 alter table public.profiles add column if not exists referred_by text;
 alter table public.profiles add column if not exists referral_bonus_days int default 0;
@@ -89,6 +98,35 @@ create table if not exists public.user_progress (
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   unique(user_id, word_id)
+);
+
+create table if not exists public.review_items (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  word_id text not null,
+  level int not null,
+  lesson_id text,
+  ease int default 2,
+  interval_days int default 0,
+  due_at timestamptz default now(),
+  correct_count int default 0,
+  wrong_count int default 0,
+  last_reviewed_at timestamptz,
+  updated_at timestamptz default now(),
+  unique (user_id, word_id)
+);
+
+create table if not exists public.daily_missions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  mission_date date not null default current_date,
+  task_id text not null,
+  task_type text not null,
+  completed boolean default false,
+  xp_awarded int default 0,
+  completed_at timestamptz,
+  updated_at timestamptz default now(),
+  unique (user_id, mission_date, task_id)
 );
 
 create table if not exists public.quiz_results (
@@ -180,6 +218,8 @@ create table if not exists public.app_errors (
 
 alter table public.profiles enable row level security;
 alter table public.user_progress enable row level security;
+alter table public.review_items enable row level security;
+alter table public.daily_missions enable row level security;
 alter table public.quiz_results enable row level security;
 alter table public.exam_results enable row level security;
 alter table public.weak_words enable row level security;
@@ -207,6 +247,26 @@ create policy "user_progress_select_own" on public.user_progress for select usin
 create policy "user_progress_insert_own" on public.user_progress for insert with check (auth.uid() = user_id);
 create policy "user_progress_update_own" on public.user_progress for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "user_progress_delete_own" on public.user_progress for delete using (auth.uid() = user_id);
+
+drop policy if exists "review_items_select_own" on public.review_items;
+drop policy if exists "review_items_insert_own" on public.review_items;
+drop policy if exists "review_items_update_own" on public.review_items;
+drop policy if exists "review_items_delete_own" on public.review_items;
+
+create policy "review_items_select_own" on public.review_items for select using (auth.uid() = user_id);
+create policy "review_items_insert_own" on public.review_items for insert with check (auth.uid() = user_id);
+create policy "review_items_update_own" on public.review_items for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "review_items_delete_own" on public.review_items for delete using (auth.uid() = user_id);
+
+drop policy if exists "daily_missions_select_own" on public.daily_missions;
+drop policy if exists "daily_missions_insert_own" on public.daily_missions;
+drop policy if exists "daily_missions_update_own" on public.daily_missions;
+drop policy if exists "daily_missions_delete_own" on public.daily_missions;
+
+create policy "daily_missions_select_own" on public.daily_missions for select using (auth.uid() = user_id);
+create policy "daily_missions_insert_own" on public.daily_missions for insert with check (auth.uid() = user_id);
+create policy "daily_missions_update_own" on public.daily_missions for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "daily_missions_delete_own" on public.daily_missions for delete using (auth.uid() = user_id);
 
 drop policy if exists "quiz_results_select_own" on public.quiz_results;
 drop policy if exists "quiz_results_insert_own" on public.quiz_results;

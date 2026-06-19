@@ -39,13 +39,15 @@ export function generateDailyStudyPlan(userProgress: ProgressLike, weakWords: st
 
   return {
     completion: Math.min(100, Math.round((learnedCount % 10) * 10)),
-    estimatedMinutes: levelStatus.allCompleted ? 28 : recentExam && (recentExam.overallScore ?? recentExam.accuracy) < 80 ? 28 : 20,
+    estimatedMinutes: levelStatus.allCompleted ? 30 : recentExam && (recentExam.overallScore ?? recentExam.accuracy) < 80 ? 30 : 20,
     tasks: [
       { id: "lesson", titleUz: lessonTitleUz, titleRu: lessonTitleRu, href: lessonHref },
       { id: "review", titleUz: `${weakCount} ta zaif so‘zni takrorlang`, titleRu: `Повторите ${weakCount} слабых слов`, href: "/review" },
       { id: "reading", titleUz: "1 ta o‘qish mashqini bajaring", titleRu: "Выполните 1 задание по чтению", href: `/reading/${level}` },
       { id: "listening", titleUz: "1 ta tinglash mashq qiling", titleRu: "Выполните 1 задание по аудированию", href: `/listening/${level}` },
-      { id: "speaking", titleUz: "1 ta gapirish mashq qiling", titleRu: "Выполните 1 задание по говорению", href: `/speaking/${level}` }
+      { id: "speaking", titleUz: "1 ta speaking mashq qiling", titleRu: "Выполните 1 задание по говорению", href: `/speaking/${level}` },
+      { id: "quiz", titleUz: "Mini testni bajaring", titleRu: "Пройдите мини-тест", href: `/quiz/${level}` },
+      { id: "ai", titleUz: "AI murabbiyga 1 savol bering", titleRu: "Задайте 1 вопрос AI-тренеру", href: "/ai-tutor" }
     ],
     focusSkill
   };

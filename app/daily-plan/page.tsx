@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Check, Clock3, Headphones, Mic, RotateCcw, Sparkles } from "lucide-react";
+import { BookOpen, Bot, Check, Clock3, Headphones, HelpCircle, Mic, RotateCcw, Sparkles } from "lucide-react";
 import { AppButton } from "@/components/AppButton";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -9,7 +9,7 @@ import { generateDailyStudyPlan } from "@/utils/studyPlan";
 import { useProgressStore } from "@/store/progressStore";
 import { useI18n } from "@/utils/i18n";
 
-const icons = { lesson: BookOpen, review: RotateCcw, reading: BookOpen, listening: Headphones, speaking: Mic };
+const icons = { lesson: BookOpen, review: RotateCcw, reading: BookOpen, listening: Headphones, speaking: Mic, quiz: HelpCircle, ai: Bot };
 
 function localDateKey() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashkent" }).format(new Date());
@@ -41,7 +41,13 @@ export default function DailyPlanPage() {
             <span className="rounded-full bg-orange-soft px-4 py-2 text-sm font-black text-orange-deep">{completion}%</span>
           </div>
           <div className="mt-4 h-3 overflow-hidden rounded-full bg-cream"><div className="h-full rounded-full bg-gradient-to-r from-orange-brand to-amber-300 transition-all" style={{ width: `${completion}%` }} /></div>
+          {completion > 0 ? (
+            <p className="mt-3 rounded-full bg-orange-soft/70 px-4 py-2 text-sm font-black text-orange-deep">
+              {language === "ru" ? "Вы получили XP · Серия продолжается" : "XP oldingiz · Seriya davom etmoqda"}
+            </p>
+          ) : null}
         </div>
+        <h2 className="mb-4 text-2xl font-black text-ink">{language === "ru" ? "Ежедневные задания" : "Kunlik topshiriqlar"}</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {plan.tasks.map((task) => {
             const Icon = icons[task.id as keyof typeof icons] ?? Sparkles;

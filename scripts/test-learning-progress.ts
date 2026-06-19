@@ -1,4 +1,7 @@
 import { getLearningProgress, saveLearningProgress } from "../utils/learningProgress";
+import { hskLessonCurriculum } from "../data/hsk/lessonCurriculum";
+import { calculateLessonProgress, completeLessonIfReady, getAllLessonProgressRecords, getLessonCompletionState, getLessonProgressRecord, saveLessonQuiz, saveLessonSection } from "../utils/lessonPlanner";
+import { isLessonUnlocked } from "../utils/lessonUnlock";
 import { getSpeakingTaskProgress, saveSpeakingTaskProgress } from "../utils/speakingProgress";
 
 const storage = new Map<string, string>();
@@ -92,4 +95,41 @@ if (!speaking.some((item) => item.taskId === "qa-speaking-1" && item.done && ite
   throw new Error("Speaking LocalStorage fallback saqlanmadi.");
 }
 
-console.log("Learning progress fallback: reading, listening va speaking saqlandi.");
+const hsk1Lessons = hskLessonCurriculum.filter((lesson) => lesson.level === 1).sort((first, second) => first.order - second.order);
+const firstLesson = hsk1Lessons[0];
+const secondLesson = hsk1Lessons[1];
+
+if (!firstLesson || !secondLesson) {
+  throw new Error("Learning progress test uchun HSK 1 birinchi va ikkinchi dars topilmadi.");
+}
+
+saveLessonSection(firstLesson.id, "vocabulary", firstLesson.level);
+saveLessonSection(firstLesson.id, "grammar", firstLesson.level);
+saveLessonSection(firstLesson.id, "reading", firstLesson.level);
+saveLessonSection(firstLesson.id, "listening", firstLesson.level);
+saveLessonSection(firstLesson.id, "speaking", firstLesson.level);
+saveLessonQuiz(firstLesson.id, 19, 20, firstLesson.level);
+
+const completion = getLessonCompletionState(firstLesson, []);
+if (!completion.ready || !completion.miniTestDone) {
+  throw new Error("Mini test 95% bo‘lganda lesson completion tayyor bo‘lmadi.");
+}
+
+completeLessonIfReady(firstLesson, []);
+const completedRecord = getLessonProgressRecord(firstLesson.id);
+const lessonProgress = calculateLessonProgress(firstLesson, []);
+const quizPercent = completedRecord.quizTotal > 0 ? Math.round((completedRecord.quizScore / completedRecord.quizTotal) * 100) : 0;
+
+if (lessonProgress !== 100 || !completedRecord.markedDone || completedRecord.done !== true || completedRecord.progress !== 100) {
+  throw new Error("Dars yakunlanganda umumiy progress 100 va done=true saqlanmadi.");
+}
+
+if (quizPercent !== 95) {
+  throw new Error("Mini test foizi alohida 95% sifatida saqlanmadi.");
+}
+
+if (!isLessonUnlocked(1, secondLesson.id, { knownWordIds: [], lessonProgress: getAllLessonProgressRecords() }, [])) {
+  throw new Error("Birinchi dars done=true bo‘lgandan keyin ikkinchi dars ochilmadi.");
+}
+
+console.log("Learning progress fallback: reading, listening, speaking, lesson done=100 va next lesson unlock saqlandi.");

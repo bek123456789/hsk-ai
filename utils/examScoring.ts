@@ -2,11 +2,12 @@ import type { ExamSectionResult, ExamSkill, HSKLevel } from "@/types";
 import type { ExamSpeakingPrompt } from "@/data/hsk/examSpeakingPrompts";
 import type { ExamWritingPrompt } from "@/data/hsk/examWritingPrompts";
 import { getCurriculumLessonsByLevel, type LessonSkillFocus } from "@/data/hsk/lessonCurriculum";
+import { deterministicOpenAnswerScore, normalizeChineseAnswer } from "@/utils/answerEvaluation";
 
 export const EXAM_PASSING_SCORE = 80;
 
 function normalizeChinese(value: string) {
-  return value.toLowerCase().replace(/[\s，。！？、,.!?;；:："'“”‘’（）()]/g, "");
+  return normalizeChineseAnswer(value);
 }
 
 function keywordCoverage(answer: string, keywords: string[]) {
@@ -26,23 +27,30 @@ export function scoreChoiceSection(answerIds: Record<string, string>, questions:
 }
 
 export function scoreSpeakingAnswer(prompt: ExamSpeakingPrompt, answer: string) {
-  const normalized = normalizeChinese(answer);
-  if (!normalized) return 0;
-  const source = normalizeChinese(prompt.textZh);
-  const copiedRatio = source && normalized.length >= Math.min(12, source.length * 0.7) && source.includes(normalized) ? 1 : 0;
-  const coverage = keywordCoverage(answer, prompt.keywordsZh);
-  const lengthTarget = prompt.level <= 2 ? 8 : prompt.level <= 4 ? 20 : 35;
-  const lengthScore = Math.min(1, normalized.length / lengthTarget);
-  const score = Math.round(coverage * 70 + lengthScore * 30);
-  return copiedRatio ? Math.min(45, score) : Math.min(100, score);
+  return deterministicOpenAnswerScore({
+    answer,
+    keywordsZh: prompt.keywordsZh,
+    minCharacters: prompt.level <= 2 ? 8 : prompt.level <= 4 ? 20 : 35,
+    promptZh: prompt.textZh,
+    promptPinyin: prompt.textPinyin,
+    sampleAnswerZh: prompt.sampleAnswerZh,
+    sampleAnswerPinyin: prompt.sampleAnswerPinyin,
+    allowBeginnerPinyin: prompt.level <= 1,
+    mode: "exam"
+  }).score;
 }
 
 export function scoreWritingAnswer(prompt: ExamWritingPrompt, answer: string) {
-  const normalized = normalizeChinese(answer);
-  if (!normalized) return 0;
-  const coverage = keywordCoverage(answer, prompt.expectedKeywordsZh);
-  const lengthScore = Math.min(1, normalized.length / Math.max(1, prompt.minCharacters));
-  return Math.min(100, Math.round(coverage * 65 + lengthScore * 35));
+  return deterministicOpenAnswerScore({
+    answer,
+    keywordsZh: prompt.expectedKeywordsZh,
+    minCharacters: prompt.minCharacters,
+    promptZh: prompt.instructionZh,
+    sampleAnswerZh: prompt.sampleAnswerZh,
+    sampleAnswerPinyin: prompt.sampleAnswerPinyin,
+    allowBeginnerPinyin: prompt.level <= 1,
+    mode: "exam"
+  }).score;
 }
 
 export function scoreOpenSection(scores: number[], locale: "uz" | "ru", skill: "speaking" | "writing"): ExamSectionResult {

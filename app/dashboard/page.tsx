@@ -15,6 +15,7 @@ import {
   Map,
   Mic,
   NotebookTabs,
+  RotateCcw,
   Sparkles,
   Target,
   Trophy,
@@ -29,6 +30,7 @@ import { Card } from "@/components/Card";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getCurriculumLessonsByLevel } from "@/data/hsk/lessonCurriculum";
 import { vocabularyEntries } from "@/data/hsk/vocabulary";
+import { hskWords } from "@/data/hskWords";
 import { useAuthStore } from "@/store/authStore";
 import { useProgressStore } from "@/store/progressStore";
 import type { AppLanguage, HSKLevel } from "@/types";
@@ -37,6 +39,7 @@ import { calculateLessonProgress, getAllLessonProgressRecords } from "@/utils/le
 import { isPremiumProfile } from "@/utils/premium";
 import { getBestExamScore, getUnlockedHskLevels, HSK_PASSING_SCORE } from "@/utils/hskUnlock";
 import { getCurrentAvailableLesson, getLevelCompletionStatus } from "@/utils/lessonUnlock";
+import { getReviewQueue } from "@/utils/spacedReview";
 
 type LocalizedText = {
   uz: string;
@@ -58,13 +61,14 @@ type DailyTask = LocalizedText & {
 };
 
 const quickActions: QuickAction[] = [
-  { href: "/lessons", uz: "Darslar", ru: "Уроки", icon: BookOpen, tone: "bg-orange-soft text-orange-deep" },
-  { href: "/practice", uz: "Mashqlar", ru: "Практика", icon: Brain, tone: "bg-skysoft text-sky-700" },
-  { href: "/ai-tutor", uz: "AI murabbiy", ru: "AI-тренер", icon: Bot, tone: "bg-amber-100 text-amber-700" },
-  { href: "/reading/1", uz: "O‘qish", ru: "Чтение", icon: BookOpen, tone: "bg-emerald-50 text-emerald-700" },
-  { href: "/listening/1", uz: "Tinglash", ru: "Аудирование", icon: Headphones, tone: "bg-violet-50 text-violet-700" },
-  { href: "/speaking/1", uz: "Gapirish", ru: "Говорение", icon: Mic, tone: "bg-rose-50 text-rose-700" },
-  { href: "/exam", uz: "Imtihon", ru: "Экзамен", icon: Trophy, tone: "bg-orange-50 text-orange-700" }
+  { href: "/learning-path", uz: "O‘quv yo‘li", ru: "Учебный путь", icon: Map, tone: "bg-orange-50 text-orange-700" },
+  { href: "/review", uz: "Aqlli takrorlash", ru: "Умное повторение", icon: RotateCcw, tone: "bg-skysoft text-sky-700" },
+  { href: "/tone-trainer", uz: "Ton mashqi", ru: "Тоны", icon: Headphones, tone: "bg-violet-50 text-violet-700" },
+  { href: "/hanzi-builder", uz: "Hanzi Builder", ru: "Hanzi Builder", icon: NotebookTabs, tone: "bg-orange-soft text-orange-deep" },
+  { href: "/sentence-builder", uz: "Gap tuzish", ru: "Предложения", icon: Brain, tone: "bg-emerald-50 text-emerald-700" },
+  { href: "/roleplay", uz: "Real vaziyat", ru: "Ситуации", icon: Mic, tone: "bg-rose-50 text-rose-700" },
+  { href: "/sprint", uz: "HSK Sprint", ru: "HSK Sprint", icon: Flame, tone: "bg-amber-100 text-amber-700" },
+  { href: "/exam", uz: "Tayyorlik", ru: "Готовность", icon: Trophy, tone: "bg-orange-50 text-orange-700" }
 ];
 
 function getLocalDateKey() {
@@ -131,6 +135,7 @@ function DashboardHeading({ eyebrow, title, action }: { eyebrow: string; title: 
 export default function DashboardPage() {
   const knownWordIds = useProgressStore((state) => state.knownWordIds);
   const weakWordIds = useProgressStore((state) => state.weakWordIds);
+  const wordReviews = useProgressStore((state) => state.wordReviews);
   const quizResults = useProgressStore((state) => state.quizResults);
   const mistakes = useProgressStore((state) => state.mistakes);
   const examAttempts = useProgressStore((state) => state.examAttempts);
@@ -175,12 +180,17 @@ export default function DashboardPage() {
   const todayKey = getLocalDateKey();
   const completedTasks = dailyPlanCompletions?.[todayKey] ?? [];
   const activeMistakes = mistakes.filter((mistake) => !mistake.learned).length;
+  const reviewDueCount = useMemo(
+    () => getReviewQueue({ words: hskWords, knownWordIds, weakWordIds, wordReviews, mistakes, limit: 30 }).length,
+    [knownWordIds, mistakes, weakWordIds, wordReviews]
+  );
   const totalQuizAnswers = quizResults.reduce((sum, result) => sum + result.total, 0);
   const correctQuizAnswers = quizResults.reduce((sum, result) => sum + result.score, 0);
   const quizAccuracy = totalQuizAnswers ? Math.round((correctQuizAnswers / totalQuizAnswers) * 100) : 0;
   const latestExam = examAttempts.find((attempt) => attempt.hskLevel === currentLevel);
   const assessmentScore = latestExam?.accuracy ?? quizAccuracy;
-  const examReadiness = Math.round(vocabularyProgress * 0.45 + lessonProgress * 0.35 + assessmentScore * 0.2);
+  const hasReadinessData = learnedLevelWords > 0 || completedLessons > 0 || totalQuizAnswers > 0 || Boolean(latestExam);
+  const examReadiness = hasReadinessData ? Math.round(vocabularyProgress * 0.45 + lessonProgress * 0.35 + assessmentScore * 0.2) : 0;
   const overallProgress = Math.round(vocabularyProgress * 0.55 + lessonProgress * 0.45);
   const dailyGoalMinutes = user?.dailyGoalMinutes ?? 15;
   const displayName = getDisplayName(user?.name, language);
@@ -196,6 +206,15 @@ export default function DashboardPage() {
       detailUz: "Keyingi darsdan • 6 daqiqa",
       detailRu: "Из следующего урока • 6 минут",
       icon: BookOpen
+    },
+    {
+      id: "review",
+      href: "/review",
+      uz: `Bugun ${reviewDueCount} ta so‘z`,
+      ru: `Сегодня ${reviewDueCount} слов`,
+      detailUz: "Aqlli takrorlash • 5 daqiqa",
+      detailRu: "Умное повторение • 5 минут",
+      icon: RotateCcw
     },
     {
       id: "reading",
@@ -232,6 +251,15 @@ export default function DashboardPage() {
       detailUz: "Bilimingizni tekshiring • 4 daqiqa",
       detailRu: "Проверьте знания • 4 минуты",
       icon: Target
+    },
+    {
+      id: "ai",
+      href: "/ai-tutor",
+      uz: "AI murabbiydan maslahat",
+      ru: "Совет AI-тренера",
+      detailUz: "Bugungi rejangizni so‘rang • 2 daqiqa",
+      detailRu: "Спросите план на сегодня • 2 минуты",
+      icon: Bot
     }
   ];
 
@@ -381,7 +409,7 @@ export default function DashboardPage() {
               eyebrow={language === "ru" ? "Быстрый доступ" : "Tezkor kirish"}
               title={language === "ru" ? "Выберите навык" : "Ko‘nikmani tanlang"}
             />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
               {quickActions.map((action) => (
                 <QuickActionCard key={action.href} action={action} language={language} level={currentLevel} />
               ))}
@@ -489,8 +517,8 @@ export default function DashboardPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
-                <AppButton href="/progress-map" variant="secondary" className="min-h-11 py-3">
-                  <Map className="h-4 w-4" /> {language === "ru" ? "Карта прогресса" : "Rivojlanish xaritasi"}
+                <AppButton href="/learning-path" variant="secondary" className="min-h-11 py-3">
+                  <Map className="h-4 w-4" /> {language === "ru" ? "Учебный путь" : "O‘quv yo‘li"}
                 </AppButton>
                 <AppButton href="/mistake-notebook" variant="secondary" className="min-h-11 py-3">
                   <NotebookTabs className="h-4 w-4" /> {language === "ru" ? "Тетрадь ошибок" : "Xatolar daftari"}

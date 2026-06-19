@@ -13,7 +13,11 @@
     "test:ai-tutor": "tsx scripts/test-ai-tutor.ts",
     "test:subscription": "tsx scripts/test-subscription-status.ts",
     "test:ui": "tsx scripts/ui-smoke-check.ts",
-    "test:learning-progress": "tsx scripts/test-learning-progress.ts"
+    "test:learning-progress": "tsx scripts/test-learning-progress.ts",
+    "test:speaking-evaluation": "tsx scripts/test-speaking-evaluation.ts",
+    "test:content-quality": "tsx scripts/test-content-quality.ts",
+    "test:unlock-flow": "tsx scripts/test-unlock-flow.ts",
+    "seed:test-user": "tsx scripts/seed-test-user.ts"
   },
   "dependencies": {
     "@stripe/stripe-js": "^9.8.0",

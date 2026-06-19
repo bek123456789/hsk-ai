@@ -10,10 +10,16 @@ import { getCurriculumLessonsByLevel } from "@/data/hsk/lessonCurriculum";
 import { useProgressStore } from "@/store/progressStore";
 import { getBestExamScore, getCompletedLessonCount, getExamLockReason, isExamUnlocked, isLevelUnlocked } from "@/utils/hskUnlock";
 import { useI18n } from "@/utils/i18n";
+import { calculateExamReadiness } from "@/utils/readinessScore";
 
 export default function ExamCenterPage() {
   const knownWordIds = useProgressStore((state) => state.knownWordIds);
+  const weakWordIds = useProgressStore((state) => state.weakWordIds);
+  const mistakes = useProgressStore((state) => state.mistakes);
+  const quizResults = useProgressStore((state) => state.quizResults);
   const examAttempts = useProgressStore((state) => state.examAttempts);
+  const practiceResults = useProgressStore((state) => state.practiceResults);
+  const streak = useProgressStore((state) => state.streak);
   const { language } = useI18n();
   const progress = { knownWordIds };
 
@@ -43,6 +49,8 @@ export default function ExamCenterPage() {
             const lessons = getCurriculumLessonsByLevel(level);
             const completedLessons = getCompletedLessonCount(level, progress);
             const lockReason = getExamLockReason(level, progress, examAttempts, language);
+            const readiness = calculateExamReadiness({ level, knownWordIds, weakWordIds, mistakes, quizResults, examAttempts, practiceResults, streak });
+            const hasReadinessData = knownWordIds.some((id) => id.startsWith(`hsk${level}-`)) || quizResults.some((result) => result.level === level) || examAttempts.some((attempt) => attempt.hskLevel === level) || practiceResults.some((result) => result.hskLevel === level);
             const status = passed
               ? language === "ru" ? "Пройдено" : "O‘tildi"
               : examOpen
@@ -70,6 +78,21 @@ export default function ExamCenterPage() {
                   <div className="mt-4 grid grid-cols-2 gap-3 text-xs font-black text-stone-600">
                     <span className="rounded-2xl bg-cream p-3"><Clock3 className="mb-2 h-4 w-4 text-orange-brand" />{template.estimatedMinutes} {language === "ru" ? "минут" : "daqiqa"}</span>
                     <span className="rounded-2xl bg-cream p-3"><BookOpenCheck className="mb-2 h-4 w-4 text-orange-brand" />{completedLessons}/{lessons.length} {language === "ru" ? "уроков" : "dars"}</span>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl bg-orange-soft/60 p-4">
+                    <div className="flex items-center justify-between gap-3 text-sm font-black text-orange-deep">
+                      <span>{language === "ru" ? "Готовность к экзамену" : "Imtihonga tayyorlik"}</span>
+                      <span>{hasReadinessData ? `${readiness.score}%` : "0%"}</span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/80">
+                      <div className="h-full rounded-full bg-orange-brand" style={{ width: `${hasReadinessData ? readiness.score : 0}%` }} />
+                    </div>
+                    <p className="mt-3 text-xs font-bold leading-5 text-stone-700">
+                      {!hasReadinessData
+                        ? (language === "ru" ? "Пока недостаточно данных для оценки." : "Hali baholash uchun ma’lumot yetarli emas.")
+                        : (language === "ru" ? readiness.recommendationRu : readiness.recommendationUz)}
+                    </p>
                   </div>
 
                   <div className="mt-4 grid grid-cols-4 gap-2">

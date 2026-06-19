@@ -130,7 +130,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "forgot" }) {
             className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full border border-orange-soft bg-white px-5 py-3.5 text-sm font-black text-ink shadow-soft transition hover:-translate-y-0.5 hover:border-orange-brand disabled:cursor-not-allowed disabled:opacity-70"
           >
             {oauthLoading ? <Loader2 className="h-5 w-5 animate-spin text-orange-brand" /> : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cream text-base font-black text-orange-deep">G</span>}
-            {t("auth.googleLogin")}
+            {mode === "register" ? t("auth.googleContinue") : t("auth.googleLogin")}
           </button>
           <div className="flex items-center gap-3 text-xs font-black text-stone-400">
             <span className="h-px flex-1 bg-orange-soft/70" />
@@ -143,7 +143,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "forgot" }) {
       {mode === "register" ? (
         <label className="block">
           <span className="mb-2 block text-sm font-black text-ink">{t("auth.name")}</span>
-          <div className="flex items-center gap-3 rounded-3xl bg-cream px-4 py-3 shadow-inner">
+          <div className="flex min-h-[3.25rem] items-center gap-3 rounded-3xl bg-cream px-4 py-3 shadow-inner transition focus-within:ring-2 focus-within:ring-orange-brand/25">
             <UserRound className="h-5 w-5 text-orange-brand" />
             <input
               value={name}
@@ -157,13 +157,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "forgot" }) {
       ) : null}
       <label className="block">
         <span className="mb-2 block text-sm font-black text-ink">{t("auth.email")}</span>
-        <div className="flex items-center gap-3 rounded-3xl bg-cream px-4 py-3 shadow-inner">
+        <div className="flex min-h-[3.25rem] items-center gap-3 rounded-3xl bg-cream px-4 py-3 shadow-inner transition focus-within:ring-2 focus-within:ring-orange-brand/25">
           <Mail className="h-5 w-5 text-orange-brand" />
           <input
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="email@namuna.uz"
+            placeholder="pochta@namuna.uz"
             className="min-w-0 flex-1 bg-transparent font-bold text-ink outline-none placeholder:text-stone-400"
             required
           />
@@ -172,7 +172,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "forgot" }) {
       {mode !== "forgot" ? (
         <label className="block">
           <span className="mb-2 block text-sm font-black text-ink">{t("auth.password")}</span>
-          <div className="flex items-center gap-3 rounded-3xl bg-cream px-4 py-3 shadow-inner">
+          <div className="flex min-h-[3.25rem] items-center gap-3 rounded-3xl bg-cream px-4 py-3 shadow-inner transition focus-within:ring-2 focus-within:ring-orange-brand/25">
             <KeyRound className="h-5 w-5 text-orange-brand" />
             <input
               type="password"
@@ -189,7 +189,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "forgot" }) {
       {mode === "register" ? (
         <label className="block">
           <span className="mb-2 block text-sm font-black text-ink">{t("auth.confirmPassword")}</span>
-          <div className="flex items-center gap-3 rounded-3xl bg-cream px-4 py-3 shadow-inner">
+          <div className="flex min-h-[3.25rem] items-center gap-3 rounded-3xl bg-cream px-4 py-3 shadow-inner transition focus-within:ring-2 focus-within:ring-orange-brand/25">
             <KeyRound className="h-5 w-5 text-orange-brand" />
             <input
               type="password"

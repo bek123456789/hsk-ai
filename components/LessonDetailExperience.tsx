@@ -3,6 +3,7 @@
 import { ArrowRight, BookOpen, Check, CheckCircle2, Clock3, Headphones, Lock, MessageCircle, Play, RotateCcw, Sparkles, Trophy, Volume2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AppButton } from "@/components/AppButton";
+import { GrammarVisualizer } from "@/components/GrammarVisualizer";
 import { PremiumLock } from "@/components/PremiumLock";
 import { SpeakingRetellTask } from "@/components/SpeakingRetellTask";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -17,7 +18,7 @@ import { vocabularyEntries } from "@/data/hsk/vocabulary";
 import { useAuthStore } from "@/store/authStore";
 import { useProgressStore } from "@/store/progressStore";
 import { useI18n } from "@/utils/i18n";
-import { calculateLessonProgress, getLessonCompletionState, getLessonProgressRecord, markLessonDone, saveLessonQuiz, saveLessonSection } from "@/utils/lessonPlanner";
+import { calculateLessonProgress, completeLessonIfReady, getAllLessonProgressRecords, getLessonCompletionState, getLessonProgressRecord, markLessonDone, saveLessonQuiz, saveLessonSection } from "@/utils/lessonPlanner";
 import { getLessonLockReason, getNextLesson as getSequentialNextLesson, getPreviousLesson, isLessonUnlocked } from "@/utils/lessonUnlock";
 import { saveLearningProgress } from "@/utils/learningProgress";
 import { isPremiumProfile } from "@/utils/premium";
@@ -61,11 +62,13 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
   const progress = mounted ? calculateLessonProgress(lesson, knownWordIds) : 0;
   const record = mounted ? getLessonProgressRecord(lesson.id) : null;
   const completion = mounted ? getLessonCompletionState(lesson, knownWordIds) : null;
-  const lessonUnlocked = mounted ? isLessonUnlocked(lesson.level, lesson.id, { knownWordIds }, examAttempts) : true;
-  const lockReason = mounted ? getLessonLockReason(lesson.level, lesson.id, { knownWordIds }, examAttempts, language) : "";
+  const lessonProgress = mounted ? getAllLessonProgressRecords() : {};
+  const lessonDone = Boolean(record?.markedDone || record?.done || progress === 100);
+  const lessonUnlocked = mounted ? isLessonUnlocked(lesson.level, lesson.id, { knownWordIds, lessonProgress }, examAttempts) : true;
+  const lockReason = mounted ? getLessonLockReason(lesson.level, lesson.id, { knownWordIds, lessonProgress }, examAttempts, language) : "";
   const requiredPreviousLesson = getPreviousLesson(lesson.level, lesson.id);
   const nextLesson = getSequentialNextLesson(lesson.level, lesson.id);
-  const nextLessonUnlocked = mounted && nextLesson ? isLessonUnlocked(lesson.level, nextLesson.id, { knownWordIds }, examAttempts) : false;
+  const nextLessonUnlocked = mounted && nextLesson ? lessonDone || isLessonUnlocked(lesson.level, nextLesson.id, { knownWordIds, lessonProgress }, examAttempts) : false;
 
   function refresh() {
     setVersion((value) => value + 1);
@@ -73,7 +76,8 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
 
   function completeWords() {
     words.forEach((word) => markKnown(word.id));
-    saveLessonSection(lesson.id, "vocabulary");
+    saveLessonSection(lesson.id, "vocabulary", lesson.level);
+    completeLessonIfReady(lesson, knownWordIds);
     refresh();
   }
 
@@ -81,7 +85,10 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
     if (!reading || !readingQuestion || !readingAnswer) return;
     const correct = readingAnswer === readingQuestion.correctOptionId;
     saveLearningProgress({ kind: "reading", contentId: reading.id, level: lesson.level, score: correct ? 1 : 0, total: 1, done: correct, mistakes: correct ? [] : [readingQuestion.id] });
-    if (correct) saveLessonSection(lesson.id, "reading");
+    if (correct) {
+      saveLessonSection(lesson.id, "reading", lesson.level);
+      completeLessonIfReady(lesson, knownWordIds);
+    }
     setReadingChecked(true);
     refresh();
   }
@@ -90,7 +97,10 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
     if (!listening || !listeningQuestion || !listeningAnswer) return;
     const correct = listeningAnswer === listeningQuestion.correctOptionId;
     saveLearningProgress({ kind: "listening", contentId: listening.id, level: lesson.level, score: correct ? 1 : 0, total: 1, done: correct, mistakes: correct ? [] : [listeningQuestion.id] });
-    if (correct) saveLessonSection(lesson.id, "listening");
+    if (correct) {
+      saveLessonSection(lesson.id, "listening", lesson.level);
+      completeLessonIfReady(lesson, knownWordIds);
+    }
     setListeningChecked(true);
     setShowTranscript(true);
     refresh();
@@ -98,7 +108,8 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
 
   function submitQuiz() {
     const score = quiz.filter((question) => quizAnswers[question.id] === question.correctOptionId).length;
-    saveLessonQuiz(lesson.id, score, quiz.length);
+    saveLessonQuiz(lesson.id, score, quiz.length, lesson.level);
+    completeLessonIfReady(lesson, knownWordIds);
     setQuizSubmitted(true);
     refresh();
   }
@@ -189,12 +200,12 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
             <article key={item.id} className="rounded-[1.7rem] bg-cream p-5">
               <p className="text-2xl font-black text-orange-deep">{item.pattern}</p>
               <p className="mt-3 font-semibold leading-7 text-stone-700">{language === "ru" ? item.explanationRu : item.explanationUz}</p>
-              <div className="mt-4 space-y-3">{item.examples.slice(0, 2).map((example, index) => <div key={`${item.id}-${index}`} className="rounded-2xl bg-white p-4 shadow-soft"><p className="font-black text-ink">{example.chinese}</p><p className="text-sm font-bold text-orange-brand">{example.pinyin}</p><p className="mt-1 text-sm font-semibold text-stone-600">{language === "ru" ? example.ru : example.uz}</p></div>)}</div>
+              <div className="mt-4 space-y-3">{item.examples.slice(0, 2).map((example, index) => <div key={`${item.id}-${index}`} className="rounded-2xl bg-white p-4 shadow-soft"><p className="font-black text-ink">{example.chinese}</p><p className="text-sm font-bold text-orange-brand">{example.pinyin}</p><p className="mt-1 text-sm font-semibold text-stone-600">{language === "ru" ? example.ru : example.uz}</p><GrammarVisualizer sentence={example.chinese} language={language} className="mt-4" /></div>)}</div>
               {item.commonMistakes[0] ? <p className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800"><span className="font-black">{language === "ru" ? "Частая ошибка:" : "Ko‘p uchraydigan xato:"}</span> {language === "ru" ? item.commonMistakes[0].ru : item.commonMistakes[0].uz}</p> : null}
             </article>
           ))}
         </div>
-        <AppButton className="mt-5" onClick={() => { saveLessonSection(lesson.id, "grammar"); refresh(); }}><Check className="h-4 w-4" /> {language === "ru" ? "Грамматика изучена" : "Grammatika o‘rganildi"}</AppButton>
+        <AppButton className="mt-5" onClick={() => { saveLessonSection(lesson.id, "grammar", lesson.level); completeLessonIfReady(lesson, knownWordIds); refresh(); }}><Check className="h-4 w-4" /> {language === "ru" ? "Грамматика изучена" : "Grammatika o‘rganildi"}</AppButton>
       </section>
 
       {reading && readingQuestion ? (
@@ -224,7 +235,7 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
       {speaking ? (
         <section className="mb-7">
           <div className="mb-4"><p className="text-sm font-black text-orange-deep">05</p><h2 className="text-3xl font-black text-ink">{language === "ru" ? "Говорение" : "Gapirish"}</h2></div>
-          <SpeakingRetellTask task={speaking} language={language} onNext={() => undefined} onEvaluated={(done) => { if (done) saveLessonSection(lesson.id, "speaking"); refresh(); }} />
+          <SpeakingRetellTask task={speaking} language={language} onNext={() => undefined} onEvaluated={(done) => { if (done) { saveLessonSection(lesson.id, "speaking", lesson.level); completeLessonIfReady(lesson, knownWordIds); } refresh(); }} />
         </section>
       ) : null}
 
@@ -250,11 +261,11 @@ export function LessonDetailExperience({ lesson }: { lesson: HSKLessonCurriculum
 
       <section className="rounded-[2.2rem] bg-gradient-to-br from-orange-brand to-orange-hot p-6 text-white shadow-glow sm:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div><p className="text-sm font-black text-white/80">{progress}%</p><h2 className="mt-1 text-3xl font-black">{record?.markedDone ? (language === "ru" ? "Урок завершён" : "Dars yakunlandi") : (language === "ru" ? "Завершить урок" : "Darsni yakunlash")}</h2><p className="mt-2 max-w-2xl font-semibold text-white/85">{language === "ru" ? "Завершите основные разделы и отметьте урок выполненным." : "Asosiy bo‘limlarni tugatib, darsni yakunlangan deb belgilang."}</p></div>
+          <div><p className="text-sm font-black text-white/80">{progress}%</p><h2 className="mt-1 text-3xl font-black">{lessonDone ? (language === "ru" ? "Урок завершён" : "Dars yakunlandi") : (language === "ru" ? "Завершить урок" : "Darsni yakunlash")}</h2><p className="mt-2 max-w-2xl font-semibold text-white/85">{language === "ru" ? "Завершите основные разделы и отметьте урок выполненным." : "Asosiy bo‘limlarni tugatib, darsni yakunlangan deb belgilang."}</p></div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => { markLessonDone(lesson.id); refresh(); }} disabled={!completion?.ready || record?.markedDone} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-orange-deep disabled:opacity-50"><CheckCircle2 className="h-5 w-5" /> {language === "ru" ? "Урок завершён" : "Dars yakunlandi"}</button>
+            <button onClick={() => { if (completion?.ready) markLessonDone(lesson.id, lesson.level); refresh(); }} disabled={!completion?.ready || lessonDone} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-orange-deep disabled:opacity-50"><CheckCircle2 className="h-5 w-5" /> {lessonDone ? (language === "ru" ? "Урок завершён" : "Dars yakunlandi") : (language === "ru" ? "Завершить урок" : "Darsni yakunlash")}</button>
             {nextLesson && nextLessonUnlocked ? (
-              <AppButton href={`/lesson/${lesson.level}/${nextLesson.id}`} variant="secondary">{language === "ru" ? "Следующий урок открыт" : "Keyingi dars ochildi"} <ArrowRight className="h-4 w-4" /></AppButton>
+              <AppButton href={`/lesson/${lesson.level}/${nextLesson.id}`} variant="secondary">{language === "ru" ? "Перейти к следующему уроку" : "Keyingi darsga o‘tish"} <ArrowRight className="h-4 w-4" /></AppButton>
             ) : nextLesson ? (
               <AppButton disabled variant="secondary"><Lock className="h-4 w-4" /> {language === "ru" ? "Следующий урок закрыт" : "Keyingi dars yopiq"}</AppButton>
             ) : <AppButton href={`/lesson/${lesson.level}`} variant="secondary"><RotateCcw className="h-4 w-4" /> {language === "ru" ? "К списку уроков" : "Darslar ro‘yxati"}</AppButton>}

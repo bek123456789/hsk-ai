@@ -1,25 +1,41 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Check, Clock3, Globe2, GraduationCap, Loader2, Sparkles, Target } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock3, Globe2, GraduationCap, HelpCircle, Loader2, Sparkles, Target } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/authStore";
+import { useProgressStore } from "@/store/progressStore";
 import { useI18n } from "@/utils/i18n";
-import type { AppLanguage } from "@/types";
+import type { AppLanguage, HSKLevel } from "@/types";
 
-const minutes = [5, 10, 15, 30] as const;
+const minutes = [5, 10, 20, 30] as const;
+const hskLevels = [1, 2, 3, 4, 5, 6] as HSKLevel[];
+
+const placementQuestions = [
+  { id: "p1", zh: "你好", uz: "salom", ru: "привет", correct: "hello" },
+  { id: "p2", zh: "我学习汉语。", uz: "Men xitoy tilini o‘rganaman.", ru: "Я изучаю китайский.", correct: "study" },
+  { id: "p3", zh: "今天几月几号？", uz: "Bugun nechanchi sana?", ru: "Какое сегодня число?", correct: "date" },
+  { id: "p4", zh: "他比我高。", uz: "U mendan balandroq.", ru: "Он выше меня.", correct: "compare" },
+  { id: "p5", zh: "虽然下雨，但是我们还去学校。", uz: "Yomg‘ir yog‘sa ham, biz baribir maktabga boramiz.", ru: "Хотя идёт дождь, мы всё равно идём в школу.", correct: "although" },
+  { id: "p6", zh: "这个决定会影响我们的计划。", uz: "Bu qaror rejamizga ta’sir qiladi.", ru: "Это решение повлияет на наш план.", correct: "influence" },
+  { id: "p7", zh: "他提出了一个值得讨论的观点。", uz: "U muhokama qilishga arziydigan fikr bildirdi.", ru: "Он высказал идею, которую стоит обсудить.", correct: "opinion" },
+  { id: "p8", zh: "我们应该从不同角度分析这个问题。", uz: "Bu muammoni turli tomondan tahlil qilishimiz kerak.", ru: "Нужно анализировать этот вопрос с разных сторон.", correct: "analysis" }
+] as const;
 
 export default function OnboardingPage() {
   const router = useRouter();
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
+  const savePlacementResult = useProgressStore((state) => state.savePlacementResult);
+  const setCurrentLevel = useProgressStore((state) => state.setCurrentLevel);
   const { language, setLanguage } = useI18n();
   const [step, setStep] = useState(0);
   const [goal, setGoal] = useState("exam");
-  const [level, setLevel] = useState(1);
-  const [levelChoice, setLevelChoice] = useState("beginner");
+  const [level, setLevel] = useState<HSKLevel>(1);
   const [dailyMinutes, setDailyMinutes] = useState(10);
+  const [placementMode, setPlacementMode] = useState<"beginner" | "test" | null>(null);
+  const [answers, setAnswers] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -37,12 +53,46 @@ export default function OnboardingPage() {
         ["work", "Ish yoki o‘qish"]
       ];
 
+  const placementScore = Object.values(answers).filter(Boolean).length;
+  const recommendedLevel = useMemo<HSKLevel>(() => {
+    if (placementMode === "beginner") return 1;
+    if (placementScore <= 2) return 1;
+    if (placementScore <= 4) return 2;
+    if (placementScore <= 6) return 3;
+    return 4;
+  }, [placementMode, placementScore]);
+
   async function finish(skip = false) {
     setSaving(true);
     setNotice(null);
     const referredBy = typeof window !== "undefined" ? localStorage.getItem("hsk-ai-referral") : null;
-    const localData = { language, goal, level, dailyMinutes, onboardingCompleted: true };
+    const finalLevel = (placementMode ? recommendedLevel : level) as HSKLevel;
+    const localData = {
+      language,
+      goal,
+      level: finalLevel,
+      targetHskLevel: finalLevel,
+      dailyMinutes,
+      placementMode,
+      placementScore,
+      onboardingCompleted: true
+    };
     localStorage.setItem("hsk-ai-onboarding", JSON.stringify(localData));
+    if (placementMode === "test") {
+      savePlacementResult({
+        id: `onboarding-placement-${Date.now()}`,
+        score: placementScore,
+        total: placementQuestions.length,
+        recommendedLevel: finalLevel,
+        skillScores: {
+          vocabulary: Math.round((placementScore / placementQuestions.length) * 100),
+          grammar: Math.round((placementScore / placementQuestions.length) * 100),
+          reading: Math.round((placementScore / placementQuestions.length) * 100)
+        },
+        completedAt: new Date().toISOString()
+      });
+    }
+    setCurrentLevel(finalLevel);
 
     try {
       const supabase = getSupabaseBrowserClient();
@@ -67,9 +117,16 @@ export default function OnboardingPage() {
   }
 
   const panels = [
+    <div key="welcome" className="text-center">
+      <Sparkles className="mx-auto h-10 w-10 text-orange-brand" />
+      <h1 className="mt-5 text-4xl font-black text-ink sm:text-5xl">{language === "ru" ? "Добро пожаловать" : "Xush kelibsiz"}</h1>
+      <p className="mx-auto mt-4 max-w-xl text-lg font-semibold leading-8 text-stone-600">
+        {language === "ru" ? "Настроим язык, цель, ежедневное время и начальный путь обучения." : "Til, maqsad, kunlik vaqt va boshlang‘ich o‘quv yo‘lingizni sozlaymiz."}
+      </p>
+    </div>,
     <div key="language">
       <Globe2 className="h-8 w-8 text-orange-brand" />
-      <h1 className="mt-5 text-4xl font-black text-ink sm:text-5xl">{language === "ru" ? "Настроим начало" : "Boshlashni sozlaymiz"}</h1>
+      <h1 className="mt-5 text-4xl font-black text-ink sm:text-5xl">{language === "ru" ? "Выберите язык" : "Interfeys tilini tanlang"}</h1>
       <div className="mt-7 grid gap-3 sm:grid-cols-2">
         {(["uz", "ru"] as AppLanguage[]).map((item) => (
           <button key={item} onClick={() => setLanguage(item)} className={`rounded-3xl border p-5 text-left text-lg font-black shadow-soft ${language === item ? "border-orange-brand bg-orange-soft text-orange-deep" : "border-white bg-white text-ink"}`}>
@@ -87,34 +144,60 @@ export default function OnboardingPage() {
     </div>,
     <div key="level">
       <GraduationCap className="h-8 w-8 text-orange-brand" />
-      <h1 className="mt-5 text-4xl font-black text-ink">{language === "ru" ? "Выберите уровень" : "Darajangizni tanlang"}</h1>
-      <button onClick={() => router.push("/placement-test")} className="mt-5 w-full rounded-3xl border border-orange-soft bg-orange-soft/60 p-4 text-left font-black text-orange-deep shadow-soft">
-        {language === "ru" ? "Определить уровень с помощью теста" : "Darajani test orqali aniqlash"}
-      </button>
-      <div className="mt-7 grid grid-cols-2 gap-3">
-        {[
-          { id: "beginner", value: 1, label: language === "ru" ? "Начинающий" : "Boshlovchi" },
-          { id: "hsk1", value: 1, label: "HSK 1" },
-          { id: "hsk2", value: 2, label: "HSK 2" },
-          { id: "hsk3", value: 3, label: "HSK 3+" }
-        ].map((item) => <button key={item.id} onClick={() => { setLevel(item.value); setLevelChoice(item.id); }} className={`rounded-3xl border p-5 font-black shadow-soft ${levelChoice === item.id ? "border-orange-brand bg-orange-soft text-orange-deep" : "border-white bg-white text-ink"}`}>{item.label}</button>)}
+      <h1 className="mt-5 text-4xl font-black text-ink">{language === "ru" ? "Выберите цель HSK" : "HSK maqsadingizni tanlang"}</h1>
+      <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {hskLevels.map((item) => <button key={item} onClick={() => { setLevel(item); setPlacementMode(null); }} className={`rounded-3xl border p-5 font-black shadow-soft ${level === item && !placementMode ? "border-orange-brand bg-orange-soft text-orange-deep" : "border-white bg-white text-ink"}`}>HSK {item}</button>)}
       </div>
     </div>,
     <div key="time">
       <Clock3 className="h-8 w-8 text-orange-brand" />
-      <h1 className="mt-5 text-4xl font-black text-ink">{language === "ru" ? "Ежедневная цель" : "Kunlik maqsad"}</h1>
+      <h1 className="mt-5 text-4xl font-black text-ink">{language === "ru" ? "Цель на день" : "Kunlik maqsad"}</h1>
       <div className="mt-7 grid grid-cols-2 gap-3">
         {minutes.map((item) => <button key={item} onClick={() => setDailyMinutes(item)} className={`rounded-3xl border p-5 text-lg font-black shadow-soft ${dailyMinutes === item ? "border-orange-brand bg-orange-soft text-orange-deep" : "border-white bg-white text-ink"}`}>{item} {language === "ru" ? "минут" : "daqiqa"}</button>)}
       </div>
+    </div>,
+    <div key="placement">
+      <HelpCircle className="h-8 w-8 text-orange-brand" />
+      <h1 className="mt-5 text-4xl font-black text-ink">{language === "ru" ? "Определим начальный путь?" : "Boshlanish yo‘lini tanlaymizmi?"}</h1>
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <button onClick={() => { setPlacementMode("beginner"); setLevel(1); }} className={`rounded-3xl border p-5 text-left font-black shadow-soft ${placementMode === "beginner" ? "border-orange-brand bg-orange-soft text-orange-deep" : "border-white bg-white text-ink"}`}>
+          {language === "ru" ? "Начать с начального уровня" : "Boshlang‘ich darajadan boshlash"}
+        </button>
+        <button onClick={() => setPlacementMode("test")} className={`rounded-3xl border p-5 text-left font-black shadow-soft ${placementMode === "test" ? "border-orange-brand bg-orange-soft text-orange-deep" : "border-white bg-white text-ink"}`}>
+          {language === "ru" ? "Пройти короткий тест" : "Qisqa test topshirish"}
+        </button>
+      </div>
+      {placementMode === "test" ? (
+        <div className="mt-6 space-y-3">
+          {placementQuestions.map((question, index) => (
+            <div key={question.id} className="rounded-3xl bg-cream p-4">
+              <p className="text-lg font-black text-ink">{index + 1}. {question.zh}</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <button onClick={() => setAnswers((current) => ({ ...current, [question.id]: true }))} className={`rounded-2xl px-4 py-3 text-left text-sm font-black shadow-soft ${answers[question.id] === true ? "bg-orange-brand text-white" : "bg-white text-ink"}`}>
+                  {language === "ru" ? question.ru : question.uz}
+                </button>
+                <button onClick={() => setAnswers((current) => ({ ...current, [question.id]: false }))} className={`rounded-2xl px-4 py-3 text-left text-sm font-black shadow-soft ${answers[question.id] === false ? "bg-stone-700 text-white" : "bg-white text-ink"}`}>
+                  {language === "ru" ? "Другое значение" : "Boshqa ma’no"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {placementMode ? (
+        <p className="mt-5 rounded-3xl bg-orange-soft/70 px-4 py-3 text-sm font-black text-orange-deep">
+          {language === "ru" ? "Рекомендуемый уровень" : "Tavsiya qilingan daraja"}: HSK {recommendedLevel}
+        </p>
+      ) : null}
     </div>,
     <div key="finish" className="text-center">
       <Sparkles className="mx-auto h-10 w-10 text-orange-brand" />
       <h1 className="mt-5 text-4xl font-black text-ink">{language === "ru" ? "Всё готово" : "Hammasi tayyor"}</h1>
       <p className="mt-3 font-semibold text-stone-600">{language === "ru" ? "Ваш первый учебный план создан." : "Birinchi o‘quv rejangiz tayyorlandi."}</p>
       <div className="mt-6 grid gap-2 text-left text-sm font-black text-stone-600">
-        <p className="rounded-2xl bg-cream p-3">10 {language === "ru" ? "новых слов" : "ta yangi so‘z"}</p>
-        <p className="rounded-2xl bg-cream p-3">5 {language === "ru" ? "повторений" : "ta takrorlash"}</p>
-        <p className="rounded-2xl bg-cream p-3">{language === "ru" ? "Аудирование и быстрый тест" : "Tinglash va tezkor test"}</p>
+        <p className="rounded-2xl bg-cream p-3">{language === "ru" ? "Текущий путь" : "Boshlanish yo‘li"}: HSK {placementMode ? recommendedLevel : level}</p>
+        <p className="rounded-2xl bg-cream p-3">{language === "ru" ? "Цель на день" : "Kunlik maqsad"}: {dailyMinutes} {language === "ru" ? "минут" : "daqiqa"}</p>
+        <p className="rounded-2xl bg-cream p-3">{language === "ru" ? "План на сегодня откроется на Dashboard." : "Bugungi reja Dashboard’da ochiladi."}</p>
       </div>
     </div>
   ];

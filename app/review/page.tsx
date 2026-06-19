@@ -1,30 +1,66 @@
 "use client";
 
-import { ArrowRight, BadgeCheck, Brain, Check, RotateCcw, Target, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowRight, BadgeCheck, Brain, Check, HelpCircle, RotateCcw, Target, Volume2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { AppButton } from "@/components/AppButton";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { WordCard } from "@/components/WordCard";
 import { hskWords } from "@/data/hskWords";
+import { saveWordProgress } from "@/lib/progressService";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useProgressStore } from "@/store/progressStore";
+import type { HSKWord, WordReviewState } from "@/types";
 import { useI18n } from "@/utils/i18n";
+import { getReviewPrompt, getReviewQueue, saveReviewItemFallback, type ReviewQueueItem } from "@/utils/spacedReview";
+import { speakChinese } from "@/utils/speechSynthesis";
+
+type ReviewAnswer = "again" | "hard" | "easy" | "mastered";
+
+async function syncReviewProgress(word: HSKWord, review: WordReviewState) {
+  try {
+    const supabase = getSupabaseBrowserClient();
+    const { data } = await supabase.auth.getSession();
+    const userId = data.session?.user.id;
+    if (!userId) return;
+    await saveWordProgress({
+      userId,
+      wordId: word.id,
+      hskLevel: word.hskLevel,
+      lessonId: word.lessonId,
+      status: review.status,
+      correctCount: review.correctCount,
+      wrongCount: review.wrongCount,
+      lastReviewedAt: review.lastReviewedAt,
+      nextReviewAt: review.nextReviewAt,
+      easeLevel: review.easeLevel
+    });
+  } catch {
+    // LocalStorage fallback keeps the review session safe when Supabase tables are absent.
+  }
+}
 
 export default function ReviewPage() {
+  const knownWordIds = useProgressStore((state) => state.knownWordIds);
   const weakWordIds = useProgressStore((state) => state.weakWordIds);
   const wordReviews = useProgressStore((state) => state.wordReviews);
+  const mistakes = useProgressStore((state) => state.mistakes);
   const markKnown = useProgressStore((state) => state.markKnown);
   const markWeak = useProgressStore((state) => state.markWeak);
+  const updateWordReview = useProgressStore((state) => state.updateWordReview);
   const saveLearningActivity = useProgressStore((state) => state.saveLearningActivity);
   const { language, t } = useI18n();
-  const [reviewQueue, setReviewQueue] = useState<string[]>([]);
+  const [reviewQueue, setReviewQueue] = useState<ReviewQueueItem[]>([]);
   const [queueReady, setQueueReady] = useState(false);
   const [sessionScore, setSessionScore] = useState(0);
-  const today = Date.now();
-  const dueWords = hskWords.filter((word) => {
-    const review = wordReviews?.[word.id];
-    return review?.nextReviewAt ? new Date(review.nextReviewAt).getTime() <= today : weakWordIds.includes(word.id);
-  });
-  const weakWords = hskWords.filter((word) => weakWordIds.includes(word.id) || wordReviews?.[word.id]?.status === "learning");
+  const [sessionTotal, setSessionTotal] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+
+  const builtQueue = useMemo(
+    () => getReviewQueue({ words: hskWords, knownWordIds, weakWordIds, wordReviews, mistakes, limit: 12 }),
+    [knownWordIds, mistakes, weakWordIds, wordReviews]
+  );
+  const dueWords = builtQueue.map((item) => item.word);
+  const weakWords = hskWords.filter((word) => weakWordIds.includes(word.id) || wordReviews?.[word.id]?.status === "learning" || wordReviews?.[word.id]?.status === "weak");
   const masteredWords = hskWords.filter((word) => wordReviews?.[word.id]?.status === "mastered");
   const recentWords = hskWords.filter((word) => Boolean(wordReviews?.[word.id]?.lastReviewedAt)).slice(0, 6);
   const sections = [
@@ -33,26 +69,90 @@ export default function ReviewPage() {
     { title: t("review.mastered"), icon: BadgeCheck, words: masteredWords },
     { title: t("review.recent"), icon: Brain, words: recentWords }
   ];
+
   useEffect(() => {
     if (!queueReady) {
-      setReviewQueue(dueWords.map((word) => word.id));
+      setReviewQueue(builtQueue);
       setQueueReady(true);
     }
-  }, [dueWords, queueReady]);
-  const reviewWord = hskWords.find((word) => word.id === reviewQueue[0]);
+  }, [builtQueue, queueReady]);
 
-  function answer(correct: boolean) {
+  const reviewItem = reviewQueue[0];
+  const reviewWord = reviewItem?.word;
+
+  function answer(value: ReviewAnswer) {
     if (!reviewWord) return;
-    if (correct) {
+    const correct = value === "easy" || value === "mastered";
+    const hard = value === "hard";
+
+    if (value === "mastered") {
       markKnown(reviewWord.id);
-      setSessionScore((value) => value + 1);
+    } else if (correct || hard) {
+      updateWordReview(reviewWord.id, correct);
     } else {
       markWeak(reviewWord.id);
     }
-    if (reviewQueue.length === 1) {
-      saveLearningActivity({ id: `review-${Date.now()}`, type: "review", hskLevel: reviewWord.hskLevel, score: sessionScore + (correct ? 1 : 0), total: sessionScore + (correct ? 1 : 0) + (correct ? 0 : 1), completedAt: new Date().toISOString() });
+
+    const nextReview = useProgressStore.getState().wordReviews?.[reviewWord.id];
+    if (nextReview) {
+      saveReviewItemFallback(reviewWord, nextReview);
+      void syncReviewProgress(reviewWord, nextReview);
     }
+
+    const nextScore = sessionScore + (correct ? 1 : 0);
+    const nextTotal = sessionTotal + 1;
+    setSessionScore(nextScore);
+    setSessionTotal(nextTotal);
+
+    if (reviewQueue.length === 1) {
+      saveLearningActivity({
+        id: `review-${Date.now()}`,
+        type: "review",
+        hskLevel: reviewWord.hskLevel,
+        score: nextScore,
+        total: nextTotal,
+        completedAt: new Date().toISOString()
+      });
+    }
+
+    setShowAnswer(false);
     setReviewQueue((queue) => queue.slice(1));
+  }
+
+  function promptContent() {
+    if (!reviewWord || !reviewItem) return null;
+    if (reviewItem.cardType === "reverse") {
+      return (
+        <>
+          <p className="mt-4 text-4xl font-black text-ink">{language === "ru" ? reviewWord.translationRu : reviewWord.translationUz}</p>
+          <p className="mt-3 text-sm font-bold text-stone-500">{language === "ru" ? "Вспомните китайское слово." : "Xitoycha so‘zni eslang."}</p>
+        </>
+      );
+    }
+    if (reviewItem.cardType === "listening") {
+      return (
+        <>
+          <button onClick={() => speakChinese(reviewWord.chinese)} className="mx-auto mt-5 inline-flex h-20 w-20 items-center justify-center rounded-[2rem] bg-orange-brand text-white shadow-glow">
+            <Volume2 className="h-9 w-9" />
+          </button>
+          <p className="mt-4 text-lg font-black text-stone-600">{language === "ru" ? "Сначала послушайте, затем проверьте ответ." : "Avval eshiting, keyin javobni tekshiring."}</p>
+        </>
+      );
+    }
+    if (reviewItem.cardType === "sentence") {
+      return (
+        <>
+          <p className="mt-4 text-3xl font-black leading-relaxed text-ink">{reviewWord.exampleChinese}</p>
+          <p className="mt-3 text-sm font-bold text-stone-500">{language === "ru" ? "Главное слово в предложении." : "Gapdagi asosiy so‘zni toping."}</p>
+        </>
+      );
+    }
+    return (
+      <>
+        <p className="mt-4 text-7xl font-black text-ink">{reviewWord.chinese}</p>
+        {reviewItem.cardType === "pinyin" ? null : <p className="mt-3 text-xl font-black text-orange-brand">{reviewWord.pinyin}</p>}
+      </>
+    );
   }
 
   return (
@@ -62,28 +162,47 @@ export default function ReviewPage() {
           <div>
             <p className="text-sm font-black uppercase tracking-normal text-orange-deep">{t("nav.review")}</p>
             <h1 className="mt-2 text-5xl font-black text-ink sm:text-7xl">{t("review.title")}</h1>
-            <p className="mt-4 max-w-2xl text-lg font-semibold leading-8 text-stone-600">
-              {t("review.subtitle")}
-            </p>
+            <p className="mt-4 max-w-2xl text-lg font-semibold leading-8 text-stone-600">{t("review.subtitle")}</p>
           </div>
           <AppButton href="/flashcard/1" variant="primary">
             {t("review.practice")} <ArrowRight className="h-5 w-5" />
           </AppButton>
         </div>
 
-        {reviewWord ? (
+        {reviewWord && reviewItem ? (
           <div className="mb-8 rounded-[2rem] border border-orange-soft/70 bg-gradient-to-br from-white via-cream to-orange-soft/40 p-6 text-center shadow-premium sm:p-9">
-            <p className="text-sm font-black text-orange-deep">{language === "ru" ? "Осталось" : "Qoldi"}: {reviewQueue.length}</p>
-            <p className="mt-4 text-7xl font-black text-ink">{reviewWord.chinese}</p>
-            <p className="mt-3 text-xl font-black text-orange-brand">{reviewWord.pinyin}</p>
-            <p className="mt-3 text-lg font-bold text-stone-600">{language === "ru" ? reviewWord.translationRu : reviewWord.translationUz}</p>
-            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <button onClick={() => answer(false)} className="warm-focus inline-flex items-center justify-center gap-2 rounded-full bg-rose-50 px-6 py-3.5 text-sm font-black text-rose-700 shadow-soft"><X className="h-5 w-5" /> {language === "ru" ? "Нужно повторить" : "Yana takrorlash kerak"}</button>
-              <button onClick={() => answer(true)} className="warm-focus inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-6 py-3.5 text-sm font-black text-white shadow-soft"><Check className="h-5 w-5" /> {language === "ru" ? "Освоено" : "O‘zlashtirildi"}</button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <p className="rounded-full bg-white px-4 py-2 text-sm font-black text-orange-deep shadow-soft">{language === "ru" ? "Сегодня" : "Bugun"} {builtQueue.length} {language === "ru" ? "слов" : "ta so‘z"}</p>
+              <p className="rounded-full bg-white px-4 py-2 text-sm font-black text-stone-600 shadow-soft">{language === "ru" ? "Осталось" : "Qoldi"}: {reviewQueue.length}</p>
             </div>
+            <p className="mt-5 text-sm font-black text-orange-deep">{getReviewPrompt(reviewItem.cardType, language)}</p>
+            {promptContent()}
+            {showAnswer ? (
+              <div className="mx-auto mt-6 max-w-xl rounded-[1.5rem] bg-white/88 p-5 shadow-soft">
+                <p className="text-4xl font-black text-ink">{reviewWord.chinese}</p>
+                <p className="mt-2 text-lg font-black text-orange-brand">{reviewWord.pinyin}</p>
+                <p className="mt-2 font-bold text-stone-700">{language === "ru" ? reviewWord.translationRu : reviewWord.translationUz}</p>
+                <p className="mt-3 text-sm font-semibold text-stone-500">{language === "ru" ? reviewWord.exampleRu : reviewWord.exampleUz}</p>
+              </div>
+            ) : (
+              <button onClick={() => setShowAnswer(true)} className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-orange-deep shadow-soft">
+                <HelpCircle className="h-4 w-4" /> {language === "ru" ? "Показать ответ" : "Javobni ko‘rsatish"}
+              </button>
+            )}
+            <div className="mt-7 grid gap-3 sm:grid-cols-4">
+              <button onClick={() => answer("again")} className="warm-focus inline-flex items-center justify-center gap-2 rounded-full bg-rose-50 px-5 py-3.5 text-sm font-black text-rose-700 shadow-soft"><X className="h-5 w-5" /> {language === "ru" ? "Не знаю" : "Bilmayman"}</button>
+              <button onClick={() => answer("hard")} className="warm-focus inline-flex items-center justify-center gap-2 rounded-full bg-amber-50 px-5 py-3.5 text-sm font-black text-amber-800 shadow-soft"><RotateCcw className="h-5 w-5" /> {language === "ru" ? "Сложно" : "Qiyin"}</button>
+              <button onClick={() => answer("easy")} className="warm-focus inline-flex items-center justify-center gap-2 rounded-full bg-orange-soft px-5 py-3.5 text-sm font-black text-orange-deep shadow-soft"><Check className="h-5 w-5" /> {language === "ru" ? "Легко" : "Oson"}</button>
+              <button onClick={() => answer("mastered")} className="warm-focus inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-brand to-amber-400 px-5 py-3.5 text-sm font-black text-white shadow-soft"><BadgeCheck className="h-5 w-5" /> {language === "ru" ? "Выучено" : "Yodlandi"}</button>
+            </div>
+            <p className="mt-4 text-xs font-bold text-stone-500">{language === "ru" ? "Сложные слова вернутся завтра." : "Qiyin so‘zlar ertaga takrorlanadi."}</p>
           </div>
-        ) : sessionScore > 0 ? (
-          <div className="mb-8 rounded-[2rem] bg-emerald-50 p-8 text-center shadow-soft"><BadgeCheck className="mx-auto h-12 w-12 text-emerald-600" /><h2 className="mt-3 text-3xl font-black text-ink">{language === "ru" ? "Повторение завершено" : "Takrorlash yakunlandi"}</h2><p className="mt-2 font-bold text-stone-600">{sessionScore}</p></div>
+        ) : sessionTotal > 0 ? (
+          <div className="mb-8 rounded-[2rem] bg-orange-soft/60 p-8 text-center shadow-soft">
+            <BadgeCheck className="mx-auto h-12 w-12 text-orange-deep" />
+            <h2 className="mt-3 text-3xl font-black text-ink">{language === "ru" ? "Повторение завершено" : "Takrorlash yakunlandi"}</h2>
+            <p className="mt-2 font-bold text-stone-600">{sessionScore}/{sessionTotal}</p>
+          </div>
         ) : null}
 
         {dueWords.length || weakWords.length || masteredWords.length || recentWords.length ? (
@@ -106,9 +225,7 @@ export default function ReviewPage() {
               <RotateCcw className="h-10 w-10" />
             </div>
             <h2 className="text-4xl font-black text-ink">{t("review.empty")}</h2>
-            <p className="mx-auto mt-3 max-w-xl font-semibold leading-7 text-stone-500">
-              {t("review.subtitle")}
-            </p>
+            <p className="mx-auto mt-3 max-w-xl font-semibold leading-7 text-stone-500">{t("review.subtitle")}</p>
           </div>
         )}
       </section>

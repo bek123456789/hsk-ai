@@ -14,6 +14,10 @@ const names = {
   greeting: { uz: "Salomlashish", ru: "Приветствие" },
   restaurant: { uz: "Restoran", ru: "Ресторан" },
   shop: { uz: "Do‘kon", ru: "Магазин" },
+  directions: { uz: "Yo‘l so‘rash", ru: "Спросить дорогу" },
+  appointment: { uz: "Vaqt belgilash", ru: "Назначить время" },
+  hotel: { uz: "Mehmonxona", ru: "Гостиница" },
+  pharmacy: { uz: "Dorixona", ru: "Аптека" },
   travel: { uz: "Sayohat", ru: "Путешествие" },
   school: { uz: "Maktab", ru: "Школа" },
   work: { uz: "Ish", ru: "Работа" }
@@ -40,7 +44,7 @@ export default function RoleplayScenarioPage() {
           <p className="text-sm font-black uppercase tracking-normal text-orange-deep">HanziFlow AI</p>
           <h1 className="mt-2 text-5xl font-black text-ink">{language === "ru" ? name.ru : name.uz}</h1>
           <p className="mt-4 max-w-2xl text-lg font-semibold leading-8 text-stone-600">
-            {language === "ru" ? "Отвечайте коротко на китайском, AI мягко исправит ошибки." : "Xitoycha qisqa javob bering, AI xatolarni muloyim tuzatadi."}
+            {language === "ru" ? "Напишите ответ на китайском. AI оценит смысл и покажет исправленный ответ." : "Javobni xitoycha yozing. AI ma’noni baholaydi va to‘g‘rilangan javobni ko‘rsatadi."}
           </p>
         </div>
         {premium || freePreview ? (

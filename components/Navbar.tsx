@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, LogOut } from "lucide-react";
+import { ArrowRight, Crown, LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -16,6 +16,59 @@ export function Navbar() {
   const logout = useAuthStore((state) => state.logout);
   const { t } = useI18n();
   const premium = isPremiumProfile(user);
+  const authPathnames = ["/login", "/register", "/forgot-password"];
+  const isAuthRoute = authPathnames.includes(pathname) || pathname.startsWith("/auth/");
+  const isPublicHome = pathname === "/";
+
+  if (isAuthRoute) return null;
+
+  if (isPublicHome) {
+    return (
+      <header className="sticky top-0 z-40 border-b border-orange-soft/50 bg-cream/86 backdrop-blur-2xl">
+        <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:h-18">
+          <Link href="/" aria-label="HanziFlow AI" className="warm-focus rounded-2xl">
+            <BrandLogo variant="full" size="sm" />
+          </Link>
+
+          <div className="hidden items-center gap-1 lg:flex">
+            {[
+              ["#learn", t("nav.learn")],
+              ["#lessons", t("nav.lessons")],
+              ["/practice", t("nav.practice")],
+              ["/exam", t("nav.exam")],
+              ["/ai-tutor", t("nav.aiTutor")]
+            ].map(([href, label]) => (
+              <Link key={href} href={href} className="rounded-full px-4 py-2 text-sm font-black text-stone-500 transition hover:bg-white/80 hover:text-ink">
+                {label}
+              </Link>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <Link href="/dashboard" className="warm-focus hidden rounded-full px-4 py-2 text-sm font-black text-stone-600 hover:bg-white/80 sm:inline-flex">
+                  Dashboard
+                </Link>
+                <Link href="/profile" aria-label={t("nav.profile")} className="warm-focus flex h-10 w-10 items-center justify-center rounded-full border border-orange-soft/70 bg-white/88 text-orange-deep shadow-soft">
+                  <UserRound className="h-4 w-4" />
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="warm-focus hidden rounded-full px-4 py-2 text-sm font-black text-stone-600 hover:bg-white/80 sm:inline-flex">
+                  {t("auth.login")}
+                </Link>
+                <Link href="/register" className="warm-focus inline-flex min-h-10 items-center gap-2 rounded-full bg-gradient-to-r from-orange-brand to-orange-hot px-4 py-2 text-sm font-black text-white shadow-card transition hover:-translate-y-0.5">
+                  {t("common.getStarted")} <ArrowRight className="h-4 w-4" />
+                </Link>
+              </>
+            )}
+          </div>
+        </nav>
+      </header>
+    );
+  }
 
   async function handleLogout() {
     try {

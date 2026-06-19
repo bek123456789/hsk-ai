@@ -6,7 +6,7 @@ import { useI18n } from "@/utils/i18n";
 
 export function AITutorCard({ compact = false }: { compact?: boolean }) {
   const { t } = useI18n();
-  const prompts = [t("ai.prompt1"), t("ai.prompt2"), t("ai.prompt3"), t("ai.prompt4"), t("ai.prompt5")];
+  const prompts = [t("ai.prompt1"), t("ai.prompt2"), t("ai.prompt3"), t("ai.prompt4"), t("ai.prompt5"), t("ai.prompt6")];
 
   return (
     <div className={`overflow-hidden rounded-5xl border border-orange-soft/70 bg-white/88 p-5 shadow-premium backdrop-blur-xl ${compact ? "" : "sm:p-7"}`}>

@@ -7,13 +7,20 @@ import type { FormEvent, ReactNode } from "react";
 import { AppButton } from "@/components/AppButton";
 import { Card } from "@/components/Card";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { hskWords } from "@/data/hskWords";
 import { UsageLimitOverview } from "@/components/UsageLimitOverview";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/authStore";
 import { useProgressStore } from "@/store/progressStore";
+import type { HSKLevel } from "@/types";
 import { useI18n } from "@/utils/i18n";
 import { recordLocalAIUsage } from "@/utils/aiUsageClient";
 import { logAppError } from "@/utils/appLogger";
+import { getUnlockedHskLevels } from "@/utils/hskUnlock";
+import { getAllLessonProgressRecords } from "@/utils/lessonPlanner";
+import { getCurrentAvailableLesson, getLevelCompletionStatus } from "@/utils/lessonUnlock";
+import { isPremiumProfile } from "@/utils/premium";
+import { getReviewQueue } from "@/utils/spacedReview";
 import { speakChinese } from "@/utils/speechSynthesis";
 
 type ChatMessage = {
@@ -29,6 +36,16 @@ type TutorResponse = {
   usage?: { fallback?: boolean };
 };
 
+function getDailyGoalMinutes() {
+  if (typeof window === "undefined") return 10;
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem("hsk-ai-onboarding") ?? "{}") as { dailyMinutes?: number };
+    return typeof parsed.dailyMinutes === "number" && parsed.dailyMinutes > 0 ? parsed.dailyMinutes : 10;
+  } catch {
+    return 10;
+  }
+}
+
 export default function AITutorPage() {
   const user = useAuthStore((state) => state.user);
   const knownWordIds = useProgressStore((state) => state.knownWordIds);
@@ -37,6 +54,8 @@ export default function AITutorPage() {
   const examAttempts = useProgressStore((state) => state.examAttempts);
   const mistakes = useProgressStore((state) => state.mistakes);
   const bestScoreByLevel = useProgressStore((state) => state.bestScoreByLevel);
+  const wordReviews = useProgressStore((state) => state.wordReviews);
+  const currentProgressLevel = useProgressStore((state) => state.currentLevel);
   const { language, t } = useI18n();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -48,10 +67,19 @@ export default function AITutorPage() {
   const prompts = useMemo(
     () =>
       language === "ru"
-        ? ["Дай 5 слов для HSK 1", "Переведи это предложение на китайский", "Как улучшить произношение?", "Составь план на сегодня"]
-        : ["HSK 1 uchun 5 ta so‘z ber", "Bu gapni xitoychaga tarjima qil", "Talaffuzimni qanday yaxshilayman?", "Bugungi rejamni tuzib ber"],
+        ? ["Что мне учить сегодня?", "Объясни мои слабые места", "Готов ли я к экзамену?", "Составь план на 20 минут", "Объясни следующий урок", "Проанализируй мои ошибки"]
+        : ["Bugun nima o‘rganay?", "Zaif joylarimni tushuntir", "Imtihonga tayyormanmi?", "Menga 20 daqiqalik reja tuz", "Keyingi darsni tushuntir", "Xatolarimni tahlil qil"],
     [language]
   );
+  const lessonProgress = typeof window !== "undefined" ? getAllLessonProgressRecords() : {};
+  const unlockedLevels = getUnlockedHskLevels({ knownWordIds }, examAttempts);
+  const requestedLevel = (user?.currentHSKLevel ?? currentProgressLevel ?? 1) as HSKLevel;
+  const activeLevel = unlockedLevels.includes(requestedLevel) ? requestedLevel : unlockedLevels.at(-1) ?? 1;
+  const currentAvailableLesson = getCurrentAvailableLesson(activeLevel, { knownWordIds, lessonProgress });
+  const activeLevelStatus = getLevelCompletionStatus(activeLevel, { knownWordIds, lessonProgress });
+  const reviewDueCount = getReviewQueue({ words: hskWords, knownWordIds, weakWordIds, wordReviews, mistakes, limit: 24 }).length;
+  const dailyGoalMinutes = getDailyGoalMinutes();
+  const premium = isPremiumProfile(user);
   const visibleMessages = messages.length ? messages : [{ role: "assistant" as const, content: t("ai.pageWelcome") }];
   const assistantLabel = language === "ru" ? "AI-помощник" : "AI yordamchi";
 
@@ -88,14 +116,26 @@ export default function AITutorPage() {
         body: JSON.stringify({
           message: text,
           language,
-          hskLevel: user?.currentHSKLevel ?? 1,
+          hskLevel: activeLevel,
           clientContext: {
             knownWordIds: knownWordIds.slice(0, 240),
             weakWordIds: weakWordIds.slice(0, 80),
             quizResults: quizResults.slice(0, 8),
             examAttempts: examAttempts.slice(0, 8),
             mistakes: mistakes.slice(0, 20),
-            bestScoreByLevel
+            bestScoreByLevel,
+            currentAvailableLesson: currentAvailableLesson ? {
+              id: currentAvailableLesson.id,
+              level: currentAvailableLesson.level,
+              order: currentAvailableLesson.order,
+              titleUz: currentAvailableLesson.titleUz,
+              titleRu: currentAvailableLesson.titleRu
+            } : null,
+            completedLessonsInLevel: activeLevelStatus.completed,
+            totalLessonsInLevel: activeLevelStatus.total,
+            reviewDueCount,
+            dailyGoalMinutes,
+            premium
           }
         })
       });
@@ -119,6 +159,7 @@ export default function AITutorPage() {
       }
 
       if (result.usage?.fallback) recordLocalAIUsage("ai_tutor_message");
+      if (typeof window !== "undefined") window.localStorage.setItem("hanziflow-first-ai-session", "true");
       setMessages((current) => [...current, { role: "assistant", content: result.reply ?? "" }]);
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : getCleanAIError(null, undefined, language);

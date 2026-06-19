@@ -45,7 +45,7 @@ export default function DictionaryPage() {
     status: language === "ru" ? "Статус" : "Holat",
     practice: language === "ru" ? "Практиковать" : "Mashq qilish",
     listen: language === "ru" ? "Прослушать" : "Eshitish",
-    weak: language === "ru" ? "Слабые слова" : "Zaif so‘zlar"
+    weak: language === "ru" ? "Добавить в повторение" : "Takrorlashga qo‘shish"
   };
   const statusLabels: Record<(typeof statuses)[number], string> = {
     all: labels.status,

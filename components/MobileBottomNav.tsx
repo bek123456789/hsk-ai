@@ -16,7 +16,7 @@ const items = [
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { t } = useI18n();
-  const hidden = pathname === "/" || ["/login", "/register", "/forgot-password", "/onboarding"].includes(pathname);
+  const hidden = pathname === "/" || ["/login", "/register", "/forgot-password", "/onboarding"].includes(pathname) || pathname.startsWith("/auth/");
 
   if (hidden) return null;
 

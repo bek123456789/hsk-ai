@@ -5,7 +5,7 @@ import type { AppLanguage, HSKLevel } from "@/types";
 export const runtime = "nodejs";
 
 const goals = new Set(["exam", "travel", "conversation", "work"]);
-const dailyMinutes = new Set([5, 10, 15, 30]);
+const dailyMinutes = new Set([5, 10, 20, 30]);
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
@@ -45,6 +45,15 @@ export async function POST(request: Request) {
       { status: 503 }
     );
   }
+
+  await supabase
+    .from("profiles")
+    .update({
+      target_hsk_level: level,
+      ui_language: language,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", user.id);
 
   if (update.referred_by && body.skip !== true) {
     try {

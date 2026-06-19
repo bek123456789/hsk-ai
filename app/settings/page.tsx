@@ -23,6 +23,10 @@ export default function SettingsPage() {
   const [confirmText, setConfirmText] = useState("");
   const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reviewReminder, setReviewReminder] = useState(true);
+  const [streakReminder, setStreakReminder] = useState(true);
+  const [reminderTime, setReminderTime] = useState("19:00");
   const premium = isPremiumProfile(user);
 
   useEffect(() => {
@@ -37,6 +41,44 @@ export default function SettingsPage() {
     window.addEventListener("hsk-progress-synced", refresh);
     return () => window.removeEventListener("hsk-progress-synced", refresh);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = JSON.parse(window.localStorage.getItem("hanziflow-reminder-preferences") ?? "{}") as {
+        reminderEnabled?: boolean;
+        reviewReminder?: boolean;
+        streakReminder?: boolean;
+        reminderTime?: string;
+      };
+      if (typeof stored.reminderEnabled === "boolean") setReminderEnabled(stored.reminderEnabled);
+      if (typeof stored.reviewReminder === "boolean") setReviewReminder(stored.reviewReminder);
+      if (typeof stored.streakReminder === "boolean") setStreakReminder(stored.streakReminder);
+      if (typeof stored.reminderTime === "string") setReminderTime(stored.reminderTime);
+    } catch {
+      // Reminder preferences are optional and local-first.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      "hanziflow-reminder-preferences",
+      JSON.stringify({ reminderEnabled, reviewReminder, streakReminder, reminderTime })
+    );
+    if (!user?.id) return;
+    const supabase = getSupabaseBrowserClient();
+    void supabase
+      .from("profiles")
+      .update({
+        reminder_enabled: reminderEnabled,
+        reminder_time: reminderTime,
+        review_reminder_enabled: reviewReminder,
+        streak_reminder_enabled: streakReminder,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", user.id);
+  }, [reminderEnabled, reminderTime, reviewReminder, streakReminder, user?.id]);
 
   async function openPortal() {
     setPortalLoading(true);
@@ -63,9 +105,8 @@ export default function SettingsPage() {
   }
 
   const cards = [
-    { icon: Bell, title: t("settings.notifications"), detail: t("settings.notificationsDetail"), action: t("settings.betaTag") },
-    { icon: Crown, title: t("common.premium"), detail: "HanziFlow AI", action: premium ? (language === "ru" ? "Premium активен" : "Premium faol") : (language === "ru" ? "Бесплатный план" : "Bepul reja") },
-    { icon: ShieldCheck, title: t("settings.browserStorage"), detail: user?.email || "HanziFlow AI", action: "MVP" }
+    { icon: Crown, title: t("common.premium"), detail: "HanziFlow AI", action: premium ? (language === "ru" ? "Premium активен" : "Premium faol") : (language === "ru" ? "Бесплатный тариф" : "Bepul reja") },
+    { icon: ShieldCheck, title: t("settings.browserStorage"), detail: user?.email || "HanziFlow AI", action: language === "ru" ? "Локальное сохранение" : "Lokal saqlash" }
   ];
 
   const syncTime = lastSyncAt
@@ -141,6 +182,33 @@ export default function SettingsPage() {
                   {option.label}
                 </button>
               ))}
+            </div>
+          </div>
+          <div className="rounded-5xl border border-white/70 bg-white/82 p-6 shadow-premium backdrop-blur-xl">
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-3xl bg-orange-soft text-orange-deep">
+              <Bell className="h-7 w-7" />
+            </div>
+            <h2 className="text-2xl font-black text-ink">{language === "ru" ? "Напоминания" : "Eslatmalar"}</h2>
+            <p className="mt-2 text-sm font-semibold leading-6 text-stone-500">
+              {language === "ru" ? "Здесь сохраняются предпочтения. Настоящие push-уведомления пока не включены." : "Bu yerda eslatma sozlamalari saqlanadi. Hozircha haqiqiy push bildirishnoma yoqilmagan."}
+            </p>
+            <div className="mt-5 space-y-3">
+              <label className="flex items-center justify-between gap-4 rounded-3xl bg-cream px-4 py-3 text-sm font-black text-ink">
+                <span>{language === "ru" ? "Ежедневное напоминание" : "Kunlik eslatma"}</span>
+                <input type="checkbox" checked={reminderEnabled} onChange={(event) => setReminderEnabled(event.target.checked)} className="h-5 w-5 accent-orange-brand" />
+              </label>
+              <label className="flex items-center justify-between gap-4 rounded-3xl bg-cream px-4 py-3 text-sm font-black text-ink">
+                <span>{language === "ru" ? "Напоминание о повторении" : "Takrorlash eslatmasi"}</span>
+                <input type="checkbox" checked={reviewReminder} onChange={(event) => setReviewReminder(event.target.checked)} className="h-5 w-5 accent-orange-brand" />
+              </label>
+              <label className="flex items-center justify-between gap-4 rounded-3xl bg-cream px-4 py-3 text-sm font-black text-ink">
+                <span>{language === "ru" ? "Напоминание о серии дней" : "Seriya eslatmasi"}</span>
+                <input type="checkbox" checked={streakReminder} onChange={(event) => setStreakReminder(event.target.checked)} className="h-5 w-5 accent-orange-brand" />
+              </label>
+              <label className="block rounded-3xl bg-cream px-4 py-3 text-sm font-black text-ink">
+                <span className="mb-2 block">{language === "ru" ? "Время" : "Vaqt"}</span>
+                <input type="time" value={reminderTime} onChange={(event) => setReminderTime(event.target.value)} className="min-h-11 w-full rounded-2xl border border-orange-soft bg-white px-4 font-black text-ink outline-none focus:border-orange-brand" />
+              </label>
             </div>
           </div>
           <div className="rounded-5xl border border-emerald-100 bg-emerald-50/80 p-6 shadow-premium backdrop-blur-xl">

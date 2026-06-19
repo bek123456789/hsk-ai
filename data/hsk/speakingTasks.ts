@@ -88,14 +88,68 @@ const speakingTemplates = [
 
 const targetCounts: Record<HSKLevel, number> = { 1: 10, 2: 10, 3: 6, 4: 0, 5: 0, 6: 0 };
 
+function speakingWords(level: HSKLevel, count: number, offset: number, tag: string) {
+  const words = wordsFor(level, 80, 0);
+  const shoppingWords = words.filter((word) => word.pos === "ot" && ["food", "drink"].includes(word.category));
+  const usable = tag === "daily-situation"
+    ? shoppingWords.length >= count ? shoppingWords : words.filter((word) => word.pos === "ot" && ["food", "drink", "daily-life", "shopping"].includes(word.category))
+    : words.filter((word) => word.category !== "grammar-function");
+  const pool = usable.length >= count ? usable : words;
+  return Array.from({ length: count }, (_, index) => pool[(offset + index) % pool.length]);
+}
+
+function taskSpecificSample(template: (typeof speakingTemplates)[number], firstZh: string, secondZh: string, firstPy: string, secondPy: string) {
+  if (template.tag === "daily-situation") {
+    return {
+      zh: `这个多少钱？我要买${firstZh}，不要${secondZh}。`,
+      py: `zhè ge duō shao qián? wǒ yào mǎi ${firstPy}, bú yào ${secondPy}.`
+    };
+  }
+  return { zh: template.sampleZh, py: template.samplePy };
+}
+
+function taskKeywords(template: (typeof speakingTemplates)[number], firstZh: string, secondZh: string) {
+  if (template.tag === "daily-situation") return ["多少钱", "买", firstZh, "不要", secondZh];
+  if (template.tag === "dialogue") return [firstZh, secondZh, "学习", "练习"];
+  if (template.tag === "retell") return [firstZh, secondZh, "学习", "复习"];
+  if (template.tag === "opinion") return [firstZh, secondZh, "重要", "记住"];
+  if (template.tag === "exam-speaking") return [firstZh, secondZh, "学生", "教室"];
+  return [firstZh, secondZh];
+}
+
+function taskHints(template: (typeof speakingTemplates)[number], firstZh: string, secondZh: string) {
+  if (template.tag === "daily-situation") return ["多少钱", "买", firstZh, "不要", secondZh];
+  if (template.tag === "dialogue") return [firstZh, secondZh, "图书馆", "学习", "练习"];
+  if (template.tag === "retell") return [firstZh, secondZh, "学校", "朋友", "复习"];
+  return [firstZh, secondZh, "因为", "所以"];
+}
+
+function sampleTranslation(template: (typeof speakingTemplates)[number], firstUz: string, secondUz: string, firstRu: string, secondRu: string) {
+  if (template.tag === "daily-situation") {
+    return {
+      uz: `Bu qancha turadi? Men ${firstUz} olmoqchiman, ${secondUz} kerak emas.`,
+      ru: `Сколько это стоит? Я хочу купить ${firstRu}, ${secondRu} мне не нужно.`
+    };
+  }
+  return { uz: template.meaningUz, ru: template.meaningRu };
+}
+
 const foundationalSpeakingTasks: HSKSpeakingTask[] = levels.flatMap((level) =>
   Array.from({ length: targetCounts[level] }, (_, index) => {
     const template = speakingTemplates[(index + level - 1) % speakingTemplates.length];
-    const [first, second] = wordsFor(level, 2, index * 2);
+    const [first, second] = speakingWords(level, 2, index * 2, template.tag);
     const firstZh = first?.hanzi ?? "汉语";
     const secondZh = second?.hanzi ?? "学习";
     const firstPy = first?.pinyin ?? "hàn yǔ";
     const secondPy = second?.pinyin ?? "xué xí";
+    const sample = taskSpecificSample(template, firstZh, secondZh, firstPy, secondPy);
+    const sampleMeaning = sampleTranslation(
+      template,
+      first?.uz ?? "yangi so‘z",
+      second?.uz ?? "mashq",
+      first?.ru ?? "новое слово",
+      second?.ru ?? "практика"
+    );
 
     return {
       id: `speaking-hsk${level}-${String(index + 1).padStart(2, "0")}`,
@@ -111,12 +165,12 @@ const foundationalSpeakingTasks: HSKSpeakingTask[] = levels.flatMap((level) =>
       textRu: template.ru(first?.ru ?? "новое слово", second?.ru ?? "практика"),
       expectedMeaningUz: template.meaningUz,
       expectedMeaningRu: template.meaningRu,
-      sampleAnswerZh: template.sampleZh,
-      sampleAnswerPinyin: template.samplePy,
-      sampleAnswerUz: template.meaningUz,
-      sampleAnswerRu: template.meaningRu,
-      keywordsZh: [firstZh, secondZh, "学习", "复习"].filter((value, itemIndex, array) => array.indexOf(value) === itemIndex),
-      allowedAnswerHintsZh: [firstZh, secondZh, "学校", "朋友", "练习"],
+      sampleAnswerZh: sample.zh,
+      sampleAnswerPinyin: sample.py,
+      sampleAnswerUz: sampleMeaning.uz,
+      sampleAnswerRu: sampleMeaning.ru,
+      keywordsZh: taskKeywords(template, firstZh, secondZh).filter((value, itemIndex, array) => array.indexOf(value) === itemIndex),
+      allowedAnswerHintsZh: taskHints(template, firstZh, secondZh),
       difficulty: difficultyForLevel(level),
       estimatedMinutes: level <= 2 ? 5 : level <= 4 ? 7 : 9,
       tags: [template.tag, `hsk-${level}`, "speaking"]

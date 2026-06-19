@@ -154,7 +154,8 @@ export default function ProfilePage() {
   const quizCorrect = levelQuizResults.reduce((sum, result) => sum + result.score, 0);
   const quizTotal = levelQuizResults.reduce((sum, result) => sum + result.total, 0);
   const assessment = latestExam?.accuracy ?? (quizTotal ? Math.round((quizCorrect / quizTotal) * 100) : 0);
-  const examReadiness = Math.round(vocabularyProgress * 0.45 + lessonProgress * 0.35 + assessment * 0.2);
+  const hasReadinessData = learnedLevelWords > 0 || completedLessons > 0 || quizTotal > 0 || Boolean(latestExam);
+  const examReadiness = hasReadinessData ? Math.round(vocabularyProgress * 0.45 + lessonProgress * 0.35 + assessment * 0.2) : 0;
   const currentProgress = Math.round(vocabularyProgress * 0.55 + lessonProgress * 0.45);
   const premium = isPremiumProfile(user);
   const subscriptionEnd = formatDate(user?.premiumUntil ?? user?.currentPeriodEnd, language);

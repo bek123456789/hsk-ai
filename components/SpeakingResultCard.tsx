@@ -25,8 +25,8 @@ export function SpeakingResultCard({ result, language, onRetry, onNext }: { resu
         <div className="grid grid-cols-2 gap-2 text-xs font-black sm:grid-cols-4">
           <span>{language === "ru" ? "Смысл" : "Mazmun"} {result.meaningScore}%</span>
           <span>{language === "ru" ? "Грамматика" : "Grammatika"} {result.grammarScore}%</span>
-          <span>{language === "ru" ? "Слова" : "So‘zlar"} {result.vocabularyScore}%</span>
-          <span>{language === "ru" ? "Плавность" : "Ravonlik"} {result.fluencyScore}%</span>
+          <span>{language === "ru" ? "Словарный запас" : "So‘z boyligi"} {result.vocabularyScore}%</span>
+          <span>{language === "ru" ? "Беглость" : "Ravonlik"} {result.fluencyScore}%</span>
         </div>
       </div>
       <p className="mt-4 text-sm font-bold leading-6">{feedback}</p>

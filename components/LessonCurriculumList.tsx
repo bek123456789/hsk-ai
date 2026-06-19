@@ -12,7 +12,7 @@ import { useI18n } from "@/utils/i18n";
 import { calculateLessonProgress, getAllLessonProgressRecords } from "@/utils/lessonPlanner";
 import { isPremiumProfile } from "@/utils/premium";
 import { getLevelLockReason, isLevelUnlocked } from "@/utils/hskUnlock";
-import { getLessonLockReason, isLessonCompleted, isLessonUnlocked } from "@/utils/lessonUnlock";
+import { getCurrentAvailableLesson, getLessonLockReason, isLessonCompleted, isLessonUnlocked } from "@/utils/lessonUnlock";
 
 const levels: HSKLevel[] = [1, 2, 3, 4, 5, 6];
 
@@ -94,6 +94,8 @@ export function LessonCurriculumList({ levelOnly }: { levelOnly?: HSKLevel }) {
                 const levelLocked = !isLevelUnlocked(group.level, { knownWordIds }, examAttempts);
                 const sequenceUnlocked = mounted && isLessonUnlocked(group.level, lesson.id, { knownWordIds, lessonProgress }, examAttempts);
                 const completed = mounted && isLessonCompleted(group.level, lesson.id, { knownWordIds, lessonProgress });
+                const currentLesson = mounted ? getCurrentAvailableLesson(group.level, { knownWordIds, lessonProgress }) : group.lessons[0] ?? null;
+                const current = !completed && sequenceUnlocked && currentLesson?.id === lesson.id;
                 const progressionLocked = levelLocked || !sequenceUnlocked;
                 const premiumLocked = lesson.isPremium && !premium;
                 const locked = progressionLocked || premiumLocked;
@@ -104,8 +106,8 @@ export function LessonCurriculumList({ levelOnly }: { levelOnly?: HSKLevel }) {
                     ? (language === "ru" ? "Эта функция доступна в Premium." : "Bu funksiya Premium uchun.")
                     : "";
                 return (
-                  <article key={lesson.id} className="relative overflow-hidden rounded-[2rem] border border-white/80 bg-white/90 p-6 shadow-premium transition hover:-translate-y-1">
-                    <div className="absolute right-0 top-0 h-28 w-28 rounded-bl-[5rem] bg-orange-soft/70" />
+                  <article key={lesson.id} className={`relative overflow-hidden rounded-[2rem] border bg-white/90 p-6 shadow-premium transition hover:-translate-y-1 ${current ? "border-orange-brand/45 shadow-glow" : "border-white/80"}`}>
+                    <div className={`absolute right-0 top-0 h-28 w-28 rounded-bl-[5rem] ${current ? "bg-gradient-to-br from-orange-soft to-amber-100" : "bg-orange-soft/70"}`} />
                     <div className="relative">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-soft text-orange-deep shadow-soft">
@@ -117,10 +119,11 @@ export function LessonCurriculumList({ levelOnly }: { levelOnly?: HSKLevel }) {
                       <h3 className="mt-2 text-2xl font-black leading-tight text-ink">{language === "ru" ? lesson.titleRu : lesson.titleUz}</h3>
                       <p className="mt-3 min-h-16 text-sm font-semibold leading-6 text-stone-600">{language === "ru" ? lesson.descriptionRu : lesson.descriptionUz}</p>
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <span className={`rounded-full px-3 py-2 text-xs font-black ${completed ? "bg-emerald-50 text-emerald-700" : locked ? "bg-stone-100 text-stone-500" : "bg-orange-soft text-orange-deep"}`}>
-                          {completed ? (language === "ru" ? "Завершено" : "Yakunlandi") : locked ? (language === "ru" ? "Закрыто" : "Yopiq") : (progress > 0 ? (language === "ru" ? "Продолжить" : "Davom etish") : (language === "ru" ? "Открыто" : "Ochiq"))}
+                        <span className={`rounded-full px-3 py-2 text-xs font-black ${completed ? "bg-amber-50 text-amber-800" : locked ? "bg-stone-100 text-stone-500" : "bg-orange-soft text-orange-deep"}`}>
+                          {completed ? (language === "ru" ? "Завершено" : "Yakunlandi") : locked ? (language === "ru" ? "Закрыто" : "Yopiq") : current ? (language === "ru" ? "Текущий урок" : "Joriy dars") : (progress > 0 ? (language === "ru" ? "Продолжить" : "Davom etish") : (language === "ru" ? "Открыто" : "Ochiq"))}
                         </span>
                         {!locked && !completed ? <span className="rounded-full bg-cream px-3 py-2 text-xs font-black text-stone-500">{language === "ru" ? "Уроки открываются по порядку" : "Darslar ketma-ket ochiladi"}</span> : null}
+                        {current && progress > 0 ? <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-orange-deep shadow-soft">{language === "ru" ? "Следующий урок открыт" : "Keyingi dars ochildi"}</span> : null}
                       </div>
                       <div className="mt-5 flex flex-wrap gap-2 text-xs font-black text-stone-600">
                         <span className="rounded-full bg-cream px-3 py-2">{lesson.vocabularyIds.length} {language === "ru" ? "слов" : "so‘z"}</span>

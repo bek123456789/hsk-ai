@@ -33,8 +33,8 @@ export const advancedScenarios: AdvancedScenario[] = [
     passagePinyin: "lǐ jīng lǐ fā xiàn tuán duì měi tiān dōu hěn máng, kě shì zhòng yào de rèn wu cháng cháng bù néng àn shí wán chéng. tā jiàn yì dà jiā xiān què dìng gōng zuò de qīng zhòng huǎn jí, zài ān pái jù tǐ shí jiān.",
     passageUz: "Menejer Li jamoa har kuni band bo‘lsa ham, muhim vazifalar ko‘pincha vaqtida tugamasligini sezdi. U avval ishlarning ustuvorligini aniqlab, keyin aniq vaqt ajratishni tavsiya qildi.",
     passageRu: "Менеджер Ли заметил, что команда каждый день занята, но важные задачи часто не выполняются вовремя. Он предложил сначала определить приоритеты, а затем распределить время.",
-    summaryZh: "先确定工作的轻重缓急，才能更有效地完成任务。",
-    summaryPinyin: "xiān què dìng gōng zuò de qīng zhòng huǎn jí, cái néng gèng yǒu xiào de wán chéng rèn wu.",
+    summaryZh: "先确定工作的轻重缓急，才能提高效率并按时完成任务。",
+    summaryPinyin: "xiān què dìng gōng zuò de qīng zhòng huǎn jí, cái néng tí gāo xiào lǜ bìng àn shí wán chéng rèn wu.",
     summaryUz: "Vazifalarni samarali bajarish uchun avval ustuvorliklarni aniqlash kerak.",
     summaryRu: "Чтобы выполнять задачи эффективнее, сначала нужно определить приоритеты.",
     keywordsZh: ["工作", "任务", "安排", "效率"]
@@ -69,8 +69,8 @@ export const advancedScenarios: AdvancedScenario[] = [
     passagePinyin: "wáng lì zuì jìn zǒng shì shuì de hěn wǎn, bái tiān gōng zuò shí hěn nán jí zhōng zhù yì lì. yī shēng jiàn yì tā wǎn shang shǎo kàn shǒu jī, bìng qiě měi tiān zài tóng yí shí jiān shuì jiào.",
     passageUz: "Van Li oxirgi payt juda kech uxlayapti va kunduz ishda diqqatini jamlay olmayapti. Shifokor unga kechqurun telefonni kamroq ko‘rish va har kuni bir vaqtda uxlashni maslahat berdi.",
     passageRu: "В последнее время Ван Ли поздно ложится и днём не может сосредоточиться на работе. Врач посоветовал ей меньше пользоваться телефоном вечером и ложиться спать в одно время.",
-    summaryZh: "规律的睡眠和少看手机有助于提高白天的注意力。",
-    summaryPinyin: "guī lǜ de shuì mián hé shǎo kàn shǒu jī yǒu zhù yú tí gāo bái tiān de zhù yì lì.",
+    summaryZh: "良好的睡眠习惯和少看手机有助于提高白天的注意力。",
+    summaryPinyin: "liáng hǎo de shuì mián xí guàn hé shǎo kàn shǒu jī yǒu zhù yú tí gāo bái tiān de zhù yì lì.",
     summaryUz: "Muntazam uyqu va telefonni kamroq ishlatish kunduzgi diqqatni yaxshilaydi.",
     summaryRu: "Регулярный сон и меньшее использование телефона помогают лучше сосредоточиться днём.",
     keywordsZh: ["睡眠", "手机", "注意力", "习惯"]
@@ -429,10 +429,10 @@ export const advancedScenarios: AdvancedScenario[] = [
     passagePinyin: "gōng gòng tǎo lùn zhōng, rén men cháng bǎ gè rén jīng yàn dàng zuò pǔ biàn guī lǜ. rán ér, gè bié xiàn xiàng zhǐ néng tí gōng xiàn suǒ, bù néng zì dòng zhèng míng jié lùn. kě kào de pàn duàn xū yào míng què zhèng jù de fàn wéi, yě yào chéng rèn shàng wèi què dìng de bù fen.",
     passageUz: "Jamoat muhokamasida shaxsiy tajriba ko‘pincha umumiy qonun sifatida ko‘rsatiladi. Bitta holat faqat yo‘nalish beradi, xulosani isbotlamaydi. Ishonchli baho dalil chegarasini va noaniq qismlarni tan olishi kerak.",
     passageRu: "В общественной дискуссии личный опыт нередко принимают за общую закономерность. Отдельный случай даёт лишь подсказку, но не доказывает вывод. Надёжная оценка учитывает границы доказательств и неопределённость.",
-    summaryZh: "可靠的结论必须建立在适当范围的证据上，并保留对不确定性的认识。",
-    summaryPinyin: "kě kào de jié lùn bì xū jiàn lì zài shì dàng fàn wéi de zhèng jù shàng, bìng bǎo liú duì bù què dìng xìng de rèn shi.",
-    summaryUz: "Ishonchli xulosa yetarli dalilga tayanib, noaniqlikni ham tan olishi kerak.",
-    summaryRu: "Надёжный вывод должен опираться на достаточные доказательства и учитывать неопределённость.",
+    summaryZh: "可靠的结论必须建立在适当范围的证据上，也要承认不确定性，避免把推测当作事实。",
+    summaryPinyin: "kě kào de jié lùn bì xū jiàn lì zài shì dàng fàn wéi de zhèng jù shàng, yě yào chéng rèn bù què dìng xìng, bì miǎn bǎ tuī cè dàng zuò shì shí.",
+    summaryUz: "Ishonchli xulosa yetarli dalilga tayanishi, noaniqlikni tan olishi va taxminni fakt deb qabul qilmasligi kerak.",
+    summaryRu: "Надёжный вывод должен опираться на достаточные доказательства, признавать неопределённость и не принимать предположение за факт.",
     keywordsZh: ["证据", "推测", "结论", "不确定性"]
   },
   {

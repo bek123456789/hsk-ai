@@ -6,13 +6,27 @@ import { AuthShell } from "@/components/AuthShell";
 export default function RegisterPage() {
   return (
     <AuthShell
-      title="HanziFlow AI hisobingizni yarating"
-      subtitle="Xitoy tilini HSK bo‘yicha AI yordamchi bilan o‘rganishni boshlang."
+      mode="register"
+      title={{ uz: "Hisob yarating", ru: "Создайте аккаунт" }}
+      subtitle={{
+        uz: "HanziFlow AI’da Xitoy tilini bosqichma-bosqich o‘rganishni boshlang.",
+        ru: "Начните изучать китайский в HanziFlow AI шаг за шагом."
+      }}
       footer={
-        <>
-          Hisobingiz bormi?{" "}
-          <Link href="/login" className="font-black text-orange-brand">Kirish</Link>
-        </>
+        {
+          uz: (
+            <>
+              Hisobingiz bormi?{" "}
+              <Link href="/login" className="font-black text-orange-brand">Kirish</Link>
+            </>
+          ),
+          ru: (
+            <>
+              Уже есть аккаунт?{" "}
+              <Link href="/login" className="font-black text-orange-brand">Войти</Link>
+            </>
+          )
+        }
       }
     >
       <Suspense fallback={<div className="rounded-3xl bg-cream p-6 text-sm font-black text-stone-500">Yuklanmoqda...</div>}>
