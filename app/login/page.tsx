@@ -9,7 +9,7 @@ export default function LoginPage() {
       mode="login"
       title={{ uz: "Hisobingizga kiring", ru: "Войдите в аккаунт" }}
       subtitle={{
-        uz: "Darslaringiz, zaif so‘zlar takrori va AI yordamchini davom ettiring.",
+        uz: "Hisobingizga kiring va o‘qishni davom ettiring.",
         ru: "Продолжайте уроки, повторение слабых слов и AI-помощника."
       }}
       footer={
@@ -18,16 +18,12 @@ export default function LoginPage() {
             <>
               Hisobingiz yo‘qmi?{" "}
               <Link href="/register" className="font-black text-orange-brand">Hisob yaratish</Link>
-              <span className="mx-2">·</span>
-              <Link href="/forgot-password" className="font-black text-orange-brand">Parolni unutdingizmi?</Link>
             </>
           ),
           ru: (
             <>
               Аккаунта нет?{" "}
               <Link href="/register" className="font-black text-orange-brand">Создать аккаунт</Link>
-              <span className="mx-2">·</span>
-              <Link href="/forgot-password" className="font-black text-orange-brand">Забыли пароль?</Link>
             </>
           )
         }

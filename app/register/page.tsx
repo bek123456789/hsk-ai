@@ -9,7 +9,7 @@ export default function RegisterPage() {
       mode="register"
       title={{ uz: "Hisob yarating", ru: "Создайте аккаунт" }}
       subtitle={{
-        uz: "HanziFlow AI’da Xitoy tilini bosqichma-bosqich o‘rganishni boshlang.",
+        uz: "Xitoy tilini o‘rganishni bugunoq boshlang.",
         ru: "Начните изучать китайский в HanziFlow AI шаг за шагом."
       }}
       footer={

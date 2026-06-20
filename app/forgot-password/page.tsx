@@ -9,7 +9,7 @@ export default function ForgotPasswordPage() {
       mode="forgot"
       title={{ uz: "Parolni tiklash", ru: "Восстановление пароля" }}
       subtitle={{
-        uz: "Email manzilingizni kiriting, tiklash havolasini yuboramiz.",
+        uz: "Emailingizni kiriting, tiklash havolasini yuboramiz.",
         ru: "Введите email, и мы отправим ссылку для восстановления."
       }}
       footer={

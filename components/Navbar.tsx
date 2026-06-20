@@ -14,7 +14,7 @@ export function Navbar() {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const { t } = useI18n();
+  const { language, setLanguage, t } = useI18n();
   const premium = isPremiumProfile(user);
   const authPathnames = ["/login", "/register", "/forgot-password"];
   const isAuthRoute = authPathnames.includes(pathname) || pathname.startsWith("/auth/");
@@ -45,10 +45,24 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-2">
+            <div className="hidden rounded-full border border-orange-soft bg-white/82 p-1 shadow-soft sm:inline-flex">
+              {(["uz", "ru"] as const).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setLanguage(item)}
+                  className={`min-h-8 rounded-full px-2.5 text-[11px] font-black transition ${
+                    language === item ? "bg-orange-brand text-white" : "text-stone-500 hover:bg-orange-soft hover:text-ink"
+                  }`}
+                >
+                  {item === "uz" ? "UZ" : "RU"}
+                </button>
+              ))}
+            </div>
             {user ? (
               <>
                 <Link href="/dashboard" className="warm-focus hidden rounded-full px-4 py-2 text-sm font-black text-stone-600 hover:bg-white/80 sm:inline-flex">
-                  Dashboard
+                  {language === "ru" ? "Кабинет" : "Panel"}
                 </Link>
                 <Link href="/profile" aria-label={t("nav.profile")} className="warm-focus flex h-10 w-10 items-center justify-center rounded-full border border-orange-soft/70 bg-white/88 text-orange-deep shadow-soft">
                   <UserRound className="h-4 w-4" />
