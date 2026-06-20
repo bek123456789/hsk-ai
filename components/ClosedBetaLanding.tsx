@@ -156,69 +156,112 @@ function ProductCard({ item }: { item: CardItem }) {
 
 function HeroAppPreview() {
   const { language } = useI18n();
+  const dailyTasks = language === "ru"
+    ? [
+        ["8 слов", "новые слова"],
+        ["1 чтение", "текст"],
+        ["1 speaking", "ответ"]
+      ]
+    : [
+        ["8 so‘z", "yangi so‘z"],
+        ["1 o‘qish", "matn"],
+        ["1 speaking", "javob"]
+      ];
+
   return (
-    <div className="relative mx-auto w-full max-w-[520px]">
-      <div className="absolute -inset-4 rounded-[3rem] bg-orange-brand/12 blur-3xl" />
-      <div className="relative overflow-hidden rounded-[2rem] border border-orange-soft/80 bg-white/90 p-4 shadow-phone backdrop-blur-xl sm:p-5">
-        <span className="absolute right-4 top-4 rounded-full bg-cream/90 px-3 py-1.5 text-xs font-black text-orange-deep shadow-soft">
-          {language === "ru" ? "Демо-вид" : "Demo ko‘rinish"}
-        </span>
-        <div className="rounded-[1.75rem] bg-gradient-to-br from-cream via-white to-orange-soft/55 p-4 sm:p-5">
-          <div className="flex items-center justify-between gap-4 pt-8 sm:pt-0">
-            <BrandLogo variant="icon" size="sm" showText={false} />
-            <div className="flex items-center gap-2 rounded-full bg-white/82 px-3 py-2 text-xs font-black text-stone-600 shadow-soft">
-              <Sparkles className="h-4 w-4 text-orange-brand" /> HSK 1
+    <div className="relative mx-auto w-full max-w-[540px]">
+      <div className="absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-orange-brand/18 via-orange-soft/28 to-white blur-3xl" />
+      <div className="relative overflow-hidden rounded-[2rem] border border-orange-soft/80 bg-white/82 p-3 shadow-phone backdrop-blur-xl sm:p-4">
+        <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-orange-soft/40 blur-3xl" />
+        <div className="relative rounded-[1.65rem] border border-white/80 bg-gradient-to-br from-white via-cream to-orange-soft/45 p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <BrandLogo variant="full" size="sm" showText className="min-w-0" />
+            <div className="flex shrink-0 items-center gap-2 rounded-full border border-orange-soft bg-white/85 px-3 py-2 text-xs font-black text-orange-deep shadow-soft">
+              <Sparkles className="h-4 w-4" />
+              {language === "ru" ? "Демо" : "Demo"}
             </div>
           </div>
 
-          <div className="mt-5 rounded-[1.6rem] bg-white p-4 shadow-premium">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-normal text-orange-deep">{language === "ru" ? "Текущий урок" : "Joriy dars"}</p>
-                <h3 className="mt-1 text-xl font-black leading-tight text-ink">HSK 1 — 1-dars</h3>
-                <p className="mt-2 text-sm font-semibold text-stone-500">{language === "ru" ? "Приветствие и знакомство" : "Salomlashish va tanishish"}</p>
+          <div className="mt-5 grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="rounded-[1.55rem] border border-orange-soft/60 bg-white p-4 shadow-premium">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[0.68rem] font-black uppercase tracking-normal text-orange-deep">{language === "ru" ? "Текущий урок" : "Joriy dars"}</p>
+                  <h3 className="mt-1 text-xl font-black leading-tight text-ink">HSK 1 — 1-dars</h3>
+                  <p className="mt-2 text-sm font-semibold leading-5 text-stone-600">{language === "ru" ? "Приветствие и знакомство" : "Salomlashish va tanishish"}</p>
+                </div>
+                <div className="relative grid h-16 w-16 shrink-0 place-items-center rounded-full bg-orange-soft">
+                  <div className="absolute inset-1 rounded-full border-[6px] border-white" />
+                  <span className="relative text-base font-black text-orange-deep">0%</span>
+                </div>
               </div>
-              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-orange-soft text-lg font-black text-orange-deep">0%</div>
+              <div className="mt-5 grid grid-cols-3 gap-2">
+                {[
+                  [BookOpen, language === "ru" ? "слова" : "so‘z"],
+                  [Headphones, "listening"],
+                  [Mic, "speaking"]
+                ].map(([Icon, label]) => {
+                  const ItemIcon = Icon as typeof BookOpen;
+                  return (
+                    <div key={String(label)} className="rounded-2xl bg-cream px-3 py-2 text-center">
+                      <ItemIcon className="mx-auto h-4 w-4 text-orange-deep" />
+                      <p className="mt-1 text-[0.68rem] font-black text-stone-600">{String(label)}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-orange-soft">
-              <div className="h-full w-0 rounded-full bg-gradient-to-r from-orange-brand to-orange-hot" />
-            </div>
-          </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-[1.35rem] bg-white p-4 shadow-soft">
+            <div className="rounded-[1.55rem] border border-orange-soft/60 bg-white p-4 shadow-soft">
               <p className="text-xs font-black text-stone-500">{language === "ru" ? "План на сегодня" : "Bugungi reja"}</p>
-              <p className="mt-1 text-2xl font-black text-ink">5</p>
-              <p className="mt-1 text-xs font-bold text-stone-500">{language === "ru" ? "заданий" : "vazifa"}</p>
-            </div>
-            <div className="rounded-[1.35rem] bg-white p-4 shadow-soft">
-              <p className="text-xs font-black text-stone-500">{language === "ru" ? "Повторение" : "Takrorlash"}</p>
-              <p className="mt-1 text-2xl font-black text-ink">0</p>
-              <p className="mt-1 text-xs font-bold text-stone-500">{language === "ru" ? "слов" : "so‘z"}</p>
+              <div className="mt-3 space-y-2">
+                {dailyTasks.map(([title, detail]) => (
+                  <div key={title} className="flex items-center justify-between gap-3 rounded-2xl bg-cream px-3 py-2">
+                    <div>
+                      <p className="text-sm font-black text-ink">{title}</p>
+                      <p className="text-[0.68rem] font-bold text-stone-500">{detail}</p>
+                    </div>
+                    <CheckCircle2 className="h-4 w-4 text-orange-deep" />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="mt-4 rounded-[1.55rem] border border-orange-soft/70 bg-white/88 p-4 shadow-soft">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-brand text-white">
-                <Brain className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-sm font-black text-ink">{language === "ru" ? "AI-тренер" : "AI murabbiy"}</p>
-                <p className="mt-1 text-xs font-semibold leading-5 text-stone-600">{language === "ru" ? "Начните сегодня с плана на 15 минут." : "Bugun 15 daqiqalik reja bilan boshlang."}</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-[0.82fr_1.18fr]">
+            <div className="rounded-[1.45rem] border border-orange-soft/60 bg-white p-4 shadow-soft">
+              <p className="text-xs font-black text-stone-500">{language === "ru" ? "Повторение" : "Takrorlash"}</p>
+              <div className="mt-3 flex items-end gap-2">
+                <span className="text-4xl font-black leading-none text-ink">0</span>
+                <span className="pb-1 text-sm font-black text-stone-500">{language === "ru" ? "слов" : "so‘z"}</span>
+              </div>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-orange-soft">
+                <div className="h-full w-1/5 rounded-full bg-gradient-to-r from-orange-brand to-orange-hot" />
+              </div>
+            </div>
+
+            <div className="rounded-[1.45rem] border border-orange-soft/70 bg-white p-4 shadow-soft">
+              <div className="flex items-start gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-brand to-orange-hot text-white shadow-soft">
+                  <Brain className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-ink">{language === "ru" ? "AI-тренер" : "AI murabbiy"}</p>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-stone-600">{language === "ru" ? "15 минут: урок, повторение и speaking." : "15 daqiqa: dars, takrorlash va speaking."}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {["汉", "你", "学", "好"].map((char, index) => (
+        {["汉", "你", "学"].map((char, index) => (
           <span
             key={char}
-            className="absolute hidden h-11 w-11 place-items-center rounded-2xl border border-orange-soft/70 bg-white/92 text-lg font-black text-orange-deep shadow-soft sm:grid"
+            className="absolute hidden h-10 w-10 place-items-center rounded-2xl border border-orange-soft/70 bg-white/92 text-base font-black text-orange-deep shadow-soft sm:grid"
             style={{
-              left: index % 2 === 0 ? "-0.35rem" : "auto",
-              right: index % 2 === 1 ? "-0.35rem" : "auto",
-              top: `${5.25 + index * 5.2}rem`
+              left: index === 0 ? "-0.45rem" : "auto",
+              right: index > 0 ? "-0.45rem" : "auto",
+              top: index === 0 ? "6rem" : `${9 + index * 5.8}rem`
             }}
           >
             {char}
