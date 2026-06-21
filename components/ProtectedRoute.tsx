@@ -24,7 +24,9 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if ((hasHydrated || fallbackReady) && !user) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      const query = typeof window !== "undefined" ? window.location.search.replace(/^\?/, "") : "";
+      const nextPath = query ? `${pathname}?${query}` : pathname;
+      router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
     }
   }, [fallbackReady, hasHydrated, pathname, router, user]);
 

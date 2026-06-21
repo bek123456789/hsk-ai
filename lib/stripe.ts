@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { getBaseUrl } from "@/utils/getBaseUrl";
 
 let stripeClient: Stripe | null = null;
 
@@ -13,8 +14,8 @@ export function getStripeServerClient() {
   return stripeClient;
 }
 
-export function getAppUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+export function getAppUrl(request?: Request) {
+  return getBaseUrl(request);
 }
 
 export function getStripePriceForPlan(plan: unknown) {

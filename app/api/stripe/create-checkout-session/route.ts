@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedServerUser } from "@/lib/supabase/server";
-import { getAppUrl, getStripePriceForPlan, getStripeServerClient } from "@/lib/stripe";
+import { getStripePriceForPlan, getStripeServerClient } from "@/lib/stripe";
 import type { AppLanguage } from "@/types";
+import { getStripeRedirectUrls } from "@/utils/getBaseUrl";
 
 export const runtime = "nodejs";
 
@@ -146,13 +147,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const appUrl = getAppUrl();
+    const { successUrl, cancelUrl } = getStripeRedirectUrls(request);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${appUrl}/premium/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/premium/cancel`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       metadata: {
         user_id: user.id,
         plan: body.plan

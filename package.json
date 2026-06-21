@@ -17,6 +17,7 @@
     "test:speaking-evaluation": "tsx scripts/test-speaking-evaluation.ts",
     "test:content-quality": "tsx scripts/test-content-quality.ts",
     "test:unlock-flow": "tsx scripts/test-unlock-flow.ts",
+    "test:production-urls": "tsx scripts/test-production-urls.ts",
     "seed:test-user": "tsx scripts/seed-test-user.ts"
   },
   "dependencies": {

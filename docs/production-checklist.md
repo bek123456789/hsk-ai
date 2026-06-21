@@ -16,7 +16,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 STRIPE_WEBHOOK_SECRET=
 STRIPE_PRICE_PREMIUM_MONTHLY=
 STRIPE_PRICE_PREMIUM_YEARLY=
-NEXT_PUBLIC_APP_URL=
+NEXT_PUBLIC_APP_URL=https://hsk-ai-one.vercel.app
 ```
 
 Qoidalar:
@@ -25,6 +25,8 @@ Qoidalar:
 - `.env.local` commit qilinmaydi.
 - Health endpointlar faqat `configured: true/false` kabi boolean holatlarni qaytaradi.
 - Secret qiymatlarni log, UI, metadata yoki hujjat ichiga yozmang.
+- Production’da `NEXT_PUBLIC_APP_URL` hech qachon `localhost` bo‘lmasin.
+- Custom domain ulanganda `NEXT_PUBLIC_APP_URL=https://hanzi.uz` qilib almashtiring.
 
 ## Supabase
 
@@ -68,6 +70,8 @@ https://hsk-ai-one.vercel.app/api/stripe/webhook
 
 4. Webhook signing secret `STRIPE_WEBHOOK_SECRET` sifatida Vercel’da saqlansin.
 5. `/premium`, Checkout return, `/premium/success`, `/api/subscription/status` oqimini test qiling.
+6. Stripe Checkout `success_url` production’da `https://hsk-ai-one.vercel.app/premium/success?session_id=...` bo‘lishi kerak.
+7. Stripe Checkout `cancel_url` production’da `https://hsk-ai-one.vercel.app/premium` bo‘lishi kerak.
 
 ## OpenAI
 
