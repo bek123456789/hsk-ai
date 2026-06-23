@@ -11,6 +11,7 @@ import {
   type HSKSkillQuestion
 } from "@/data/hsk/contentIndex";
 import type { HSKLevel } from "@/types";
+import { pickDiverseQuestions } from "@/utils/contentDiversity";
 
 export type RecentContentType = "vocabulary" | "reading" | "listening" | "speaking" | "quiz" | "exam" | "roleplay";
 
@@ -114,14 +115,17 @@ export function getWordsByCategory(level: HSKLevel, category: string, count: num
 
 export function getQuizQuestionsByLevel(level: HSKLevel, skill: HSKSkillQuestion["skill"] | "all" = "all", count = 12) {
   const questions = getCentralQuizQuestionsByLevel(level).filter((question) => skill === "all" || question.skill === skill);
-  return stableShuffle(
-    avoidRecentlySeenContent("quiz", questions),
-    `quiz-${level}-${skill}-${new Date().toISOString().slice(0, 10)}`
-  ).slice(0, count);
+  return pickDiverseQuestions(avoidRecentlySeenContent("quiz", questions), {
+    count,
+    seed: `quiz-${level}-${skill}-${new Date().toISOString().slice(0, 10)}`
+  });
 }
 
 export function getExamQuestionsByLevel(level: HSKLevel, count = 40) {
-  return avoidRecentlySeenContent("exam", getCentralExamQuestionsByLevel(level)).slice(0, count);
+  return pickDiverseQuestions(avoidRecentlySeenContent("exam", getCentralExamQuestionsByLevel(level)), {
+    count,
+    seed: `exam-${level}`
+  });
 }
 
 export function getNewContentForUser(type: RecentContentType, level: HSKLevel, count: number) {

@@ -24,7 +24,7 @@ export default function StrokeOrderWordPage() {
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <StrokeOrderCard word={word} />
           <div className="rounded-[2.5rem] border border-white/70 bg-white/88 p-6 shadow-premium backdrop-blur-xl">
-            <HanziWritingPad onComplete={() => markKnown(word.id)} />
+            <HanziWritingPad word={word} onComplete={() => markKnown(word.id)} />
             <div className="mt-6">
               <AppButton href={`/stroke-order/${word.hskLevel}`} variant="primary">{language === "ru" ? "Следующий иероглиф" : "Keyingi iyeroglif"}</AppButton>
             </div>

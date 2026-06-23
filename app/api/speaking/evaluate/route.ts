@@ -18,8 +18,8 @@ type RequestBody = {
 
 const evaluationCache = new Map<string, ReturnType<typeof fallbackResult>>();
 
-function localeOf(value: unknown): AppLanguage {
-  return value === "ru" || value === "en" ? value : "uz";
+function localeOf(_value: unknown): AppLanguage {
+  return "uz";
 }
 
 function levelOf(value: unknown): HSKLevel {
@@ -27,8 +27,8 @@ function levelOf(value: unknown): HSKLevel {
   return parsed >= 1 && parsed <= 6 ? (parsed as HSKLevel) : 1;
 }
 
-function localized(locale: AppLanguage, uz: string, ru: string) {
-  return locale === "ru" ? ru : uz;
+function localized(_locale: AppLanguage, uz: string, _ru: string) {
+  return uz;
 }
 
 function error(locale: AppLanguage, status: number, messageUz: string, messageRu: string, code: string) {
@@ -159,7 +159,7 @@ export async function POST(request: Request) {
         {
           role: "system",
           content:
-            "You are HanziFlow AI speaking evaluator for Uzbek and Russian speakers. Return only valid JSON with the required fields. Evaluate whether the Chinese answer captures the meaning, not perfect native fluency. Do not claim affiliation with HSK exam organizers."
+            "You are HanziFlow AI speaking evaluator for Uzbek speakers. Return only valid JSON with the required fields. Evaluate whether the Chinese answer captures the meaning, not perfect native fluency. Do not claim affiliation with HSK exam organizers."
         },
         {
           role: "user",

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Check, Clock3, Globe2, GraduationCap, HelpCircle, Loader2, Sparkles, Target } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock3, GraduationCap, HelpCircle, Loader2, Sparkles, Target } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -35,7 +35,7 @@ export default function OnboardingPage() {
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
   const savePlacementResult = useProgressStore((state) => state.savePlacementResult);
   const setCurrentLevel = useProgressStore((state) => state.setCurrentLevel);
-  const { language, setLanguage } = useI18n();
+  const { language } = useI18n();
   const [step, setStep] = useState(0);
   const [goal, setGoal] = useState("exam");
   const [level, setLevel] = useState<HSKLevel>(1);
@@ -67,7 +67,7 @@ export default function OnboardingPage() {
     const referredBy = typeof window !== "undefined" ? localStorage.getItem("hsk-ai-referral") : null;
     const finalLevel = (placementMode ? recommendedLevel : level) as HSKLevel;
     const localData = {
-      language,
+      language: "uz" as const,
       goal,
       level: finalLevel,
       targetHskLevel: finalLevel,
@@ -119,20 +119,9 @@ export default function OnboardingPage() {
     <div key="welcome" className="text-center">
       <Sparkles className="mx-auto h-10 w-10 text-orange-brand" />
       <h1 className="mt-5 text-4xl font-black text-ink sm:text-5xl">{language === "ru" ? "Добро пожаловать" : "Xush kelibsiz"}</h1>
-      <p className="mx-auto mt-4 max-w-xl text-lg font-semibold leading-8 text-stone-600">
-        {language === "ru" ? "Настроим язык, цель, ежедневное время и начальный путь обучения." : "Til, maqsad, kunlik vaqt va boshlang‘ich o‘quv yo‘lingizni sozlaymiz."}
+        <p className="mx-auto mt-4 max-w-xl text-lg font-semibold leading-8 text-stone-600">
+        Maqsad, kunlik vaqt va boshlang‘ich o‘quv yo‘lingizni sozlaymiz.
       </p>
-    </div>,
-    <div key="language">
-      <Globe2 className="h-8 w-8 text-orange-brand" />
-      <h1 className="mt-5 text-4xl font-black text-ink sm:text-5xl">{language === "ru" ? "Выберите язык" : "Interfeys tilini tanlang"}</h1>
-      <div className="mt-7 grid gap-3 sm:grid-cols-2">
-        {(["uz", "ru", "en"] as AppLanguage[]).map((item) => (
-          <button key={item} onClick={() => setLanguage(item)} className={`rounded-3xl border p-5 text-left text-lg font-black shadow-soft ${language === item ? "border-orange-brand bg-orange-soft text-orange-deep" : "border-white bg-white text-ink"}`}>
-            {item === "uz" ? "O‘zbekcha" : item === "ru" ? "Русский" : "English"}
-          </button>
-        ))}
-      </div>
     </div>,
     <div key="goal">
       <Target className="h-8 w-8 text-orange-brand" />

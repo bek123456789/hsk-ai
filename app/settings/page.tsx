@@ -8,7 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/authStore";
 import { useProgressStore } from "@/store/progressStore";
-import { languageOptions, useI18n } from "@/utils/i18n";
+import { useI18n } from "@/utils/i18n";
 import { getSubscriptionStatusLabel, isPremiumProfile } from "@/utils/premium";
 
 export default function SettingsPage() {
@@ -16,7 +16,7 @@ export default function SettingsPage() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const resetProgress = useProgressStore((state) => state.resetProgress);
-  const { language, setLanguage, t } = useI18n();
+  const { language, t } = useI18n();
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
   const [dangerOpen, setDangerOpen] = useState(false);
@@ -105,12 +105,12 @@ export default function SettingsPage() {
   }
 
   const cards = [
-    { icon: Crown, title: t("common.premium"), detail: "HanziFlow AI", action: premium ? (language === "ru" ? "Premium активен" : "Premium faol") : (language === "ru" ? "Бесплатный тариф" : "Bepul reja") },
-    { icon: ShieldCheck, title: t("settings.browserStorage"), detail: user?.email || "HanziFlow AI", action: language === "ru" ? "Локальное сохранение" : "Lokal saqlash" }
+    { icon: Crown, title: t("common.premium"), detail: "HanziFlow AI", action: premium ? "Premium faol" : "Bepul reja" },
+    { icon: ShieldCheck, title: t("settings.browserStorage"), detail: user?.email || "HanziFlow AI", action: "Lokal saqlash" }
   ];
 
   const syncTime = lastSyncAt
-    ? new Date(lastSyncAt).toLocaleString(language === "ru" ? "ru-RU" : "uz-UZ", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+    ? new Date(lastSyncAt).toLocaleString("uz-UZ", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
     : null;
 
   function handleLocalReset() {
@@ -163,25 +163,6 @@ export default function SettingsPage() {
               <AppButton href="/usage" variant="secondary">{language === "ru" ? "Лимиты AI" : "AI limitlari"}</AppButton>
               <AppButton href="/referral" variant="secondary">{language === "ru" ? "Пригласить друга" : "Do‘st taklif qilish"}</AppButton>
               <AppButton href="/help" variant="secondary">{language === "ru" ? "Центр помощи" : "Yordam markazi"}</AppButton>
-            </div>
-          </div>
-          <div className="rounded-5xl border border-white/70 bg-white/82 p-6 shadow-premium backdrop-blur-xl">
-            <h2 className="text-2xl font-black text-ink">{t("settings.language")}</h2>
-            <p className="mt-2 font-semibold text-stone-500">{t("settings.languageDetail")}</p>
-            <div className="mt-5 grid gap-2">
-              {languageOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setLanguage(option.value)}
-                  className={`rounded-3xl px-4 py-3 text-left text-sm font-black shadow-soft transition hover:-translate-y-0.5 ${
-                    language === option.value
-                      ? "bg-gradient-to-r from-orange-brand to-orange-hot text-white"
-                      : "bg-cream text-ink"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
             </div>
           </div>
           <div className="rounded-5xl border border-white/70 bg-white/82 p-6 shadow-premium backdrop-blur-xl">

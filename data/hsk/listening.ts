@@ -114,7 +114,7 @@ const listeningTemplates = [
   }
 ];
 
-const targetCounts: Record<HSKLevel, number> = { 1: 12, 2: 12, 3: 8, 4: 0, 5: 0, 6: 0 };
+const targetCounts: Record<HSKLevel, number> = { 1: 30, 2: 30, 3: 30, 4: 30, 5: 30, 6: 30 };
 
 const foundationalListeningContent: HSKListeningPrompt[] = levels.flatMap((level) =>
   Array.from({ length: targetCounts[level] }, (_, index) => {
@@ -161,7 +161,7 @@ const foundationalListeningContent: HSKListeningPrompt[] = levels.flatMap((level
 const advancedListeningContent: HSKListeningPrompt[] = advancedScenarios.map((scenario, index) => {
   const itemNumber = advancedScenarios.filter((item) => item.level === scenario.level).findIndex((item) => item.id === scenario.id) + 1;
   return {
-    id: `listening-hsk${scenario.level}-${String(itemNumber).padStart(2, "0")}`,
+    id: `listening-advanced-hsk${scenario.level}-${String(itemNumber).padStart(2, "0")}`,
     level: scenario.level,
     titleUz: `HSK ${scenario.level}: ${scenario.titleUz}`,
     titleRu: `HSK ${scenario.level}: ${scenario.titleRu}`,

@@ -159,7 +159,7 @@ const readingTopics = [
   }
 ];
 
-const targetCounts: Record<HSKLevel, number> = { 1: 10, 2: 10, 3: 8, 4: 0, 5: 0, 6: 0 };
+const targetCounts: Record<HSKLevel, number> = { 1: 30, 2: 30, 3: 30, 4: 30, 5: 30, 6: 30 };
 
 const foundationalReadingContent: HSKReadingPassage[] = levels.flatMap((level) => {
   const count = targetCounts[level];
@@ -207,7 +207,7 @@ const foundationalReadingContent: HSKReadingPassage[] = levels.flatMap((level) =
 });
 
 const advancedReadingContent: HSKReadingPassage[] = advancedScenarios.map((scenario, index) => ({
-  id: `reading-hsk${scenario.level}-${String(advancedScenarios.filter((item) => item.level === scenario.level).findIndex((item) => item.id === scenario.id) + 1).padStart(2, "0")}`,
+  id: `reading-advanced-hsk${scenario.level}-${String(advancedScenarios.filter((item) => item.level === scenario.level).findIndex((item) => item.id === scenario.id) + 1).padStart(2, "0")}`,
   level: scenario.level,
   titleUz: `HSK ${scenario.level}: ${scenario.titleUz}`,
   titleRu: `HSK ${scenario.level}: ${scenario.titleRu}`,

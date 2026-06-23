@@ -14,7 +14,6 @@ import {
   Gauge,
   GraduationCap,
   Headphones,
-  Languages,
   LifeBuoy,
   Loader2,
   LogOut,
@@ -34,7 +33,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AppButton } from "@/components/AppButton";
-import { BrandLogo } from "@/components/BrandLogo";
 import { Card } from "@/components/Card";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getCurriculumLessonsByLevel } from "@/data/hsk/lessonCurriculum";
@@ -58,11 +56,11 @@ type ProfileStat = {
   tone: string;
 };
 
-function formatDate(value: string | null | undefined, language: AppLanguage) {
+function formatDate(value: string | null | undefined, _language: AppLanguage) {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString(language === "ru" ? "ru-RU" : "uz-UZ", {
+  return date.toLocaleDateString("uz-UZ", {
     day: "numeric",
     month: "long",
     year: "numeric"
@@ -102,14 +100,13 @@ export default function ProfilePage() {
   const setCurrentLevel = useProgressStore((state) => state.setCurrentLevel);
   const streak = useProgressStore((state) => state.streak);
   const xp = useProgressStore((state) => state.xp);
-  const { language, setLanguage } = useI18n();
+  const { language } = useI18n();
   const [mounted, setMounted] = useState(false);
   const [revision, setRevision] = useState(0);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [targetLevel, setTargetLevel] = useState<HSKLevel>(1);
   const [dailyGoalMinutes, setDailyGoalMinutes] = useState(15);
-  const [profileLanguage, setProfileLanguage] = useState<AppLanguage>("uz");
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -128,8 +125,7 @@ export default function ProfilePage() {
     setName(user.name);
     setTargetLevel(user.currentHSKLevel ?? 1);
     setDailyGoalMinutes(user.dailyGoalMinutes ?? 15);
-    setProfileLanguage(language);
-  }, [language, user]);
+  }, [user]);
 
   const unlockedLevels = getUnlockedHskLevels({ knownWordIds }, examAttempts);
   const requestedLevel = (user?.currentHSKLevel ?? currentStoreLevel ?? 1) as HSKLevel;
@@ -213,10 +209,9 @@ export default function ProfilePage() {
         name: cleanName,
         currentHSKLevel: targetLevel,
         dailyGoalMinutes,
-        preferredLanguage: profileLanguage
+        preferredLanguage: "uz"
       });
       setCurrentLevel(targetLevel);
-      setLanguage(profileLanguage);
       setSaveMessage(
         synced
           ? language === "ru" ? "Профиль сохранён." : "Profil saqlandi."
@@ -238,13 +233,6 @@ export default function ProfilePage() {
   return (
     <ProtectedRoute>
       <section className="mx-auto w-full max-w-7xl px-4 pb-32 pt-5 sm:px-6 sm:pt-8 md:pb-12 lg:px-8 lg:py-10">
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <BrandLogo variant="full" size="md" />
-          <span className="rounded-full border border-orange-soft bg-white/90 px-3 py-2 text-xs font-black text-orange-deep shadow-soft">
-            {language === "ru" ? "Учебный аккаунт" : "O‘quv hisobingiz"}
-          </span>
-        </div>
-
         <Card className="overflow-hidden border-orange-soft/80 bg-gradient-to-br from-white via-orange-50/60 to-amber-100/70 p-5 sm:p-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
@@ -315,14 +303,6 @@ export default function ProfilePage() {
                   <span className="mb-2 block text-sm font-black text-ink">{language === "ru" ? "Цель на день" : "Kunlik maqsad"}</span>
                   <select value={dailyGoalMinutes} onChange={(event) => setDailyGoalMinutes(Number(event.target.value))} className="warm-focus min-h-12 w-full rounded-2xl border border-orange-soft bg-cream px-4 font-bold text-ink outline-none">
                     {[5, 10, 15, 30].map((minutes) => <option key={minutes} value={minutes}>{minutes} {language === "ru" ? "минут" : "daqiqa"}</option>)}
-                  </select>
-                </label>
-                <label>
-                  <span className="mb-2 block text-sm font-black text-ink">{language === "ru" ? "Язык" : "Til"}</span>
-                  <select value={profileLanguage} onChange={(event) => setProfileLanguage(event.target.value as AppLanguage)} className="warm-focus min-h-12 w-full rounded-2xl border border-orange-soft bg-cream px-4 font-bold text-ink outline-none">
-                    <option value="uz">O‘zbekcha</option>
-                    <option value="ru">Русский</option>
-                    <option value="en">English</option>
                   </select>
                 </label>
               </div>
@@ -438,7 +418,7 @@ export default function ProfilePage() {
               { href: "/usage", icon: Gauge, uz: "AI limitlar", ru: "AI-лимиты" },
               { href: "/help", icon: LifeBuoy, uz: "Yordam", ru: "Помощь" },
               { href: "/feedback", icon: MessageSquareText, uz: "Fikr bildirish", ru: "Обратная связь" },
-              { href: "/settings", icon: Languages, uz: "Til", ru: "Язык" },
+              { href: "/daily-plan", icon: Target, uz: "Kunlik reja", ru: "План на день" },
               { href: "/ai-tutor", icon: Bot, uz: "AI yordamchi", ru: "AI-помощник" }
             ].map((item) => (
               <Link key={`${item.href}-${item.uz}`} href={item.href} className="warm-focus group flex min-h-16 items-center gap-3 rounded-[1.25rem] border border-stone-200/70 bg-white/88 px-4 py-3 shadow-soft transition hover:border-orange-soft hover:bg-orange-50/40">

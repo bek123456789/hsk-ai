@@ -22,6 +22,8 @@ const levels: HSKLevel[] = [1, 2, 3, 4, 5, 6];
 const optionIds = ["a", "b", "c", "d"] as const;
 const failures: string[] = [];
 const placeholderRegex = /\b(lorem|todo|example only|answer a|test)\b/i;
+const minimumQuizCounts: Record<HSKLevel, number> = { 1: 120, 2: 120, 3: 100, 4: 100, 5: 80, 6: 80 };
+const minimumSkillCounts: Record<HSKLevel, number> = { 1: 30, 2: 30, 3: 30, 4: 30, 5: 30, 6: 30 };
 const advancedHskTerms = vocabularyEntries
   .filter((word) => word.level >= 4 && word.hanzi.length >= 2)
   .map((word) => word.hanzi);
@@ -137,6 +139,7 @@ function checkOptions(question: ChoiceQuestion) {
 function checkExplanations(question: ChoiceQuestion) {
   if (!question.explanationUz?.trim()) failures.push(`${question.id}: explanationUz bo‘sh`);
   if (!question.explanationRu?.trim()) failures.push(`${question.id}: explanationRu bo‘sh`);
+  if (!question.source.startsWith("public-exam") && question.explanationUz && question.explanationUz.trim().length < 20) failures.push(`${question.id}: explanationUz juda qisqa`);
   if (/^(correct|to‘g‘ri|bu to‘g‘ri javob)$/i.test(question.explanationUz.trim())) {
     failures.push(`${question.id}: explanationUz o‘rgatuvchi emas`);
   }
@@ -147,8 +150,8 @@ function checkExplanations(question: ChoiceQuestion) {
 
 function checkHsk1AdvancedTerms(question: ChoiceQuestion) {
   if (question.level !== 1) return;
-  const chineseText = question.options.map((option) => option.textZh ?? "").join("") + question.id;
-  const leaked = advancedHskTerms.find((term) => chineseText.includes(term));
+  const chineseOptions = question.options.map((option) => option.textZh ?? "").filter(Boolean);
+  const leaked = advancedHskTerms.find((term) => chineseOptions.some((option) => option === term));
   if (leaked) failures.push(`${question.id}: HSK 1 ichida advanced HSK 4-6 so‘z bor: ${leaked}`);
 }
 
@@ -195,6 +198,29 @@ function checkRuns(label: string, questions: ChoiceQuestion[]) {
   }
 }
 
+function checkDuplicateQuestionText(label: string, questions: ChoiceQuestion[]) {
+  const seen = new Map<string, string>();
+  for (const question of questions) {
+    if (question.source !== "quiz" && question.source !== "exam") continue;
+    if (!/(?:^quiz-hsk|^exam-hsk)/.test(question.id)) continue;
+    const key = `${question.level}:${question.source}:${question.options.map(optionText).join("|")}:${question.explanationUz}`.toLowerCase();
+    const previous = seen.get(key);
+    if (previous) failures.push(`${label}: duplicate question content ${previous} va ${question.id}`);
+    seen.set(key, question.id);
+  }
+}
+
+function checkMinimumCounts() {
+  for (const level of levels) {
+    const quizCount = quizQuestions.filter((question) => question.level === level).length;
+    const readingCount = hskReadingContent.filter((item) => item.level === level).length;
+    const listeningCount = hskListeningContent.filter((item) => item.level === level).length;
+    if (quizCount < minimumQuizCounts[level]) failures.push(`HSK ${level}: quiz count ${quizCount}, minimum ${minimumQuizCounts[level]}`);
+    if (readingCount < minimumSkillCounts[level]) failures.push(`HSK ${level}: reading count ${readingCount}, minimum ${minimumSkillCounts[level]}`);
+    if (listeningCount < minimumSkillCounts[level]) failures.push(`HSK ${level}: listening count ${listeningCount}, minimum ${minimumSkillCounts[level]}`);
+  }
+}
+
 function checkLessonMiniTests() {
   const questionById = new Map(quizQuestions.map((question) => [question.id, question]));
   for (const lesson of hskLessonCurriculum) {
@@ -209,6 +235,8 @@ function checkLessonMiniTests() {
 }
 
 checkUniqueIds();
+checkMinimumCounts();
+checkDuplicateQuestionText("quiz/exam", allQuestions);
 for (const question of allQuestions) {
   checkOptions(question);
   checkExplanations(question);
@@ -238,8 +266,27 @@ if (failures.length) {
 const summary = levels.map((level) => {
   const questions = quizQuestions.filter((question) => question.level === level);
   const counts = optionIds.map((id) => `${id.toUpperCase()}:${questions.filter((question) => question.correctOptionId === id).length}`).join(" ");
-  return `HSK ${level} quiz ${counts}`;
+  const reading = hskReadingContent.filter((item) => item.level === level).length;
+  const listening = hskListeningContent.filter((item) => item.level === level).length;
+  return `HSK ${level} quiz ${questions.length} (${counts}) · reading ${reading} · listening ${listening}`;
+});
+
+const topicSummary = levels.map((level) => {
+  const tags = [...hskReadingContent, ...hskListeningContent]
+    .filter((item) => item.level === level)
+    .flatMap((item) => item.tags?.filter((tag) => !tag.startsWith("hsk-") && tag !== "reading" && tag !== "listening") ?? []);
+  const counts = tags.reduce<Record<string, number>>((acc, tag) => {
+    acc[tag] = (acc[tag] ?? 0) + 1;
+    return acc;
+  }, {});
+  const top = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([tag, count]) => `${tag}:${count}`)
+    .join(" ");
+  return `HSK ${level} topics ${top}`;
 });
 
 console.log("Question quality: optionlar, correct distribution, izohlar, HSK level va mini test patternlari o‘tdi.");
 console.log(summary.join("\n"));
+console.log(topicSummary.join("\n"));

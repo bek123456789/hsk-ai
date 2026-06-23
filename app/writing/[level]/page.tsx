@@ -1,11 +1,13 @@
 "use client";
 
-import { Brush, Eraser, PenLine } from "lucide-react";
+import { PenLine } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AppButton } from "@/components/AppButton";
+import { HanziWritingPad } from "@/components/HanziWritingPad";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getWordsByLevel } from "@/data/hskWords";
+import { useProgressStore } from "@/store/progressStore";
 import type { HSKLevel } from "@/types";
 import { getWordTranslation, useI18n } from "@/utils/i18n";
 
@@ -21,7 +23,7 @@ export default function WritingPage() {
   const { language, t } = useI18n();
   const words = useMemo(() => getWordsByLevel(level), [level]);
   const [index, setIndex] = useState(0);
-  const [traced, setTraced] = useState(false);
+  const markKnown = useProgressStore((state) => state.markKnown);
   const word = words[index] ?? words[0];
 
   return (
@@ -44,22 +46,10 @@ export default function WritingPage() {
               </div>
             </div>
             <div className="rounded-[2.5rem] bg-white/84 p-6 shadow-premium">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <p className="font-black text-ink">{t("writing.draw")}</p>
-                <button onClick={() => setTraced(false)} className="flex h-11 w-11 items-center justify-center rounded-full bg-cream text-stone-600 shadow-soft"><Eraser className="h-5 w-5" /></button>
-              </div>
-              <button onClick={() => setTraced(true)} className="relative grid aspect-square w-full place-items-center overflow-hidden rounded-[2rem] border-2 border-dashed border-orange-brand/30 bg-cream shadow-inner">
-                <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-                  <span className="border-r border-b border-orange-brand/20" />
-                  <span className="border-b border-orange-brand/20" />
-                  <span className="border-r border-orange-brand/20" />
-                  <span />
-                </div>
-                <Brush className={`h-16 w-16 transition ${traced ? "scale-125 text-orange-brand" : "text-stone-300"}`} />
-              </button>
+              <HanziWritingPad word={word} onComplete={() => markKnown(word.id)} />
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <AppButton href={`/lesson/${level}`} variant="secondary">{t("common.back")}</AppButton>
-                <button onClick={() => { setTraced(false); setIndex((value) => (value + 1) % words.length); }} className="rounded-full bg-gradient-to-r from-orange-brand to-orange-hot px-6 py-4 text-sm font-black text-white shadow-card">{t("common.next")}</button>
+                <button onClick={() => setIndex((value) => (value + 1) % words.length)} className="rounded-full bg-gradient-to-r from-orange-brand to-orange-hot px-6 py-4 text-sm font-black text-white shadow-card">{t("common.next")}</button>
               </div>
             </div>
           </div>

@@ -8,28 +8,16 @@ import type { AppLanguage } from "@/types";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function localized(language: AppLanguage, key: "ok" | "activated" | "missing" | "failed") {
+function localized(_language: AppLanguage, key: "ok" | "activated" | "missing" | "failed") {
   const messages = {
     uz: {
       ok: "Premium holati tekshirildi",
       activated: "Premium faollashtirildi",
       missing: "Sessiya topilmadi",
       failed: "Premiumni tekshirib bo‘lmadi"
-    },
-    ru: {
-      ok: "Статус Premium проверен",
-      activated: "Premium активирован",
-      missing: "Сессия не найдена",
-      failed: "Не удалось проверить Premium"
-    },
-    en: {
-      ok: "Premium status checked",
-      activated: "Premium activated",
-      missing: "Session was not found",
-      failed: "Could not verify Premium"
     }
   };
-  return messages[language][key];
+  return messages.uz[key];
 }
 
 function getCustomerId(value: string | Stripe.Customer | Stripe.DeletedCustomer | null) {
@@ -49,12 +37,11 @@ function getPeriodEnd(subscription: Stripe.Subscription) {
 async function parseRequest(request: Request) {
   const url = new URL(request.url);
   let sessionId = url.searchParams.get("session_id");
-  let language: AppLanguage = url.searchParams.get("language") === "ru" ? "ru" : url.searchParams.get("language") === "en" ? "en" : "uz";
+  const language: AppLanguage = "uz";
 
   if (request.method === "POST") {
     const body = (await request.json().catch(() => ({}))) as { session_id?: unknown; language?: unknown };
     if (typeof body.session_id === "string") sessionId = body.session_id;
-    language = body.language === "ru" ? "ru" : language;
   }
 
   return { sessionId, language };
@@ -68,7 +55,7 @@ async function handleVerify(request: Request) {
 
   const { user, supabase } = await getAuthenticatedServerUser(request);
   if (!user || !supabase) {
-    return NextResponse.json({ error: language === "ru" ? "Сначала войдите в аккаунт" : "Avval tizimga kiring" }, { status: 401 });
+    return NextResponse.json({ error: "Avval tizimga kiring" }, { status: 401 });
   }
 
   try {

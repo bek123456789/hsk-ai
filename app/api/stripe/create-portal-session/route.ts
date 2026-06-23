@@ -3,35 +3,19 @@ import { getAuthenticatedServerUser } from "@/lib/supabase/server";
 import { getAppUrl, getStripeServerClient } from "@/lib/stripe";
 import type { AppLanguage } from "@/types";
 
-function errorMessage(key: "auth" | "missing" | "portal", language: AppLanguage) {
+function errorMessage(key: "auth" | "missing" | "portal", _language: AppLanguage) {
   const messages = {
     uz: {
       auth: "Avval tizimga kiring",
       missing: "Sizda hali faol obuna yo‘q",
       portal: "Obuna sahifasini ochib bo‘lmadi"
-    },
-    ru: {
-      auth: "Сначала войдите в аккаунт",
-      missing: "У вас пока нет активной подписки",
-      portal: "Не удалось открыть страницу подписки"
-    },
-    en: {
-      auth: "Sign in first",
-      missing: "You do not have an active subscription yet",
-      portal: "Could not open the subscription page"
     }
   };
-  return messages[language][key];
+  return messages.uz[key];
 }
 
 export async function POST(request: Request) {
-  let language: AppLanguage = "uz";
-  try {
-    const body = (await request.json()) as { language?: AppLanguage };
-    language = body.language === "ru" || body.language === "en" ? body.language : "uz";
-  } catch {
-    language = "uz";
-  }
+  const language: AppLanguage = "uz";
 
   try {
     const { user, supabase } = await getAuthenticatedServerUser(request);

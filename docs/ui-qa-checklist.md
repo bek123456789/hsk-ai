@@ -51,7 +51,7 @@
 - Uzun matnlar bubble/card ichida sinib chiqmaydi.
 - User-facing inglizcha UI so‘zlar yo‘q, HSK/AI/Premium kabi nomlar bundan mustasno.
 - Uzbek lotin matnida `o‘` va `g‘` apostroflari to‘g‘ri ishlatilgan.
-- Russian UI tabiiy, aralash Uzbek matn ko‘rinmaydi.
+- Uzbek UI tabiiy, eski til tanlash yoki aralash UI matni ko‘rinmaydi.
 - Loading va error holatlari raw JSON yoki stack trace ko‘rsatmaydi.
 
 ## AI Tutor Extra Checks

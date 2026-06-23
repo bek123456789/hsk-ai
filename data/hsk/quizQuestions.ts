@@ -3,7 +3,7 @@ import { buildOptionSet, difficultyForLevel, levels, simpleQuestion, translation
 import type { HSKLevel } from "@/types";
 
 export const hskQuizQuestions: HSKSkillQuestion[] = levels.flatMap((level) => {
-  const words = wordsFor(level, level <= 2 ? 24 : 16);
+  const words = wordsFor(level, level <= 2 ? 40 : level <= 4 ? 34 : 27);
   return words.flatMap((word, index) => {
     const distractors = translationDistractors(level, word);
     const pinyinOptions = buildOptionSet({

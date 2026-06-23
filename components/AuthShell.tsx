@@ -176,7 +176,7 @@ function AuthFeaturePreview({ mode, language }: { mode: AuthShellMode; language:
 }
 
 export function AuthShell({ mode = "login", title, subtitle, children, footer }: { mode?: AuthShellMode; title: LocalizedCopy; subtitle: LocalizedCopy; children: ReactNode; footer: LocalizedNode }) {
-  const { language, setLanguage } = useI18n();
+  const { language } = useI18n();
 
   return (
     <section className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_12%_10%,rgba(255,177,92,0.28),transparent_30%),radial-gradient(circle_at_88%_20%,rgba(255,107,26,0.12),transparent_26%),linear-gradient(135deg,#fffdf8,#fff7ed_52%,#fff1df)] px-4 py-4 text-[#241A14] sm:px-6 lg:px-8">
@@ -186,20 +186,6 @@ export function AuthShell({ mode = "login", title, subtitle, children, footer }:
         <Link href="/" className="warm-focus inline-flex rounded-2xl" aria-label="HanziFlow AI">
           <BrandLogo variant="full" size="sm" />
         </Link>
-        <div className="inline-flex rounded-full border border-[#F3D8C3] bg-white/86 p-1 shadow-[0_12px_34px_rgba(120,74,28,0.08)] backdrop-blur">
-          {(["uz", "ru", "en"] as const).map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setLanguage(item)}
-              className={`min-h-9 rounded-full px-3 text-xs font-black transition ${
-                language === item ? "bg-[#FF6B1A] text-white shadow-sm" : "text-[#6F625A] hover:bg-[#FFF0DE] hover:text-[#241A14]"
-              }`}
-            >
-              {item.toUpperCase()}
-            </button>
-          ))}
-        </div>
       </header>
 
       <div className="relative z-10 mx-auto grid min-h-[calc(100vh-5.25rem)] max-w-[1180px] items-center gap-8 py-7 lg:grid-cols-[1fr_0.92fr] lg:gap-12 xl:gap-16">

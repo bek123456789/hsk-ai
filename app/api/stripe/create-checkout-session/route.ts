@@ -24,7 +24,7 @@ type CheckoutErrorCode =
 
 type ErrorKey = "auth" | "plan" | "config" | "profile" | "session";
 
-function errorMessage(key: ErrorKey, language: AppLanguage) {
+function errorMessage(key: ErrorKey, _language: AppLanguage) {
   const messages = {
     uz: {
       auth: "Avval tizimga kiring",
@@ -32,24 +32,10 @@ function errorMessage(key: ErrorKey, language: AppLanguage) {
       config: "Stripe sozlamalari to‘liq emas",
       profile: "Profil ma’lumotlarini olishda xatolik",
       session: "To‘lov sessiyasini yaratib bo‘lmadi. Qayta urinib ko‘ring"
-    },
-    ru: {
-      auth: "Сначала войдите в аккаунт",
-      plan: "Премиум-план не найден",
-      config: "Настройки Stripe заполнены не полностью",
-      profile: "Ошибка получения профиля",
-      session: "Не удалось создать платёжную сессию. Попробуйте ещё раз"
-    },
-    en: {
-      auth: "Sign in first",
-      plan: "Premium plan was not found",
-      config: "Stripe settings are incomplete",
-      profile: "Could not load profile data",
-      session: "Could not create a checkout session. Try again"
     }
   };
 
-  return messages[language][key];
+  return messages.uz[key];
 }
 
 function errorResponse(error: string, code: CheckoutErrorCode, status: number) {
@@ -74,7 +60,7 @@ export async function POST(request: Request) {
     body = {};
   }
 
-  const language: AppLanguage = body.language === "ru" || body.language === "en" ? body.language : "uz";
+  const language: AppLanguage = "uz";
 
   if (!isPlan(body.plan)) {
     return errorResponse(errorMessage("plan", language), "missing_price_id", 400);

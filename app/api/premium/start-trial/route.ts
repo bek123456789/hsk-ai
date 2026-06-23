@@ -1,22 +1,13 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedServerUser } from "@/lib/supabase/server";
 import { createTrialPeriod } from "@/utils/trial";
-import type { AppLanguage } from "@/types";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  let language: AppLanguage = "uz";
-  try {
-    const body = (await request.json()) as { language?: unknown };
-    language = body.language === "ru" || body.language === "en" ? body.language : "uz";
-  } catch {
-    language = "uz";
-  }
-
   if (process.env.NEXT_PUBLIC_ENABLE_TRIAL !== "true") {
     return NextResponse.json(
-      { error: language === "ru" ? "Пробный доступ сейчас отключён" : "Sinov muddati hozir o‘chirilgan" },
+      { error: "Sinov muddati hozir o‘chirilgan" },
       { status: 404 }
     );
   }
@@ -24,7 +15,7 @@ export async function POST(request: Request) {
   const { user, supabase } = await getAuthenticatedServerUser(request);
   if (!user || !supabase) {
     return NextResponse.json(
-      { error: language === "ru" ? "Сначала войдите в аккаунт" : "Avval tizimga kiring" },
+      { error: "Avval tizimga kiring" },
       { status: 401 }
     );
   }
@@ -36,14 +27,14 @@ export async function POST(request: Request) {
     .maybeSingle();
   if (profileError) {
     return NextResponse.json(
-      { error: language === "ru" ? "Сначала примените обновление базы данных" : "Avval ma’lumotlar bazasi yangilanishini qo‘llang" },
+      { error: "Avval ma’lumotlar bazasi yangilanishini qo‘llang" },
       { status: 503 }
     );
   }
 
   if (profile?.trial_used) {
     return NextResponse.json(
-      { error: language === "ru" ? "Пробный период закончился" : "Sinov muddati tugagan" },
+      { error: "Sinov muddati tugagan" },
       { status: 409 }
     );
   }
@@ -63,7 +54,7 @@ export async function POST(request: Request) {
 
   if (error) {
     return NextResponse.json(
-      { error: language === "ru" ? "Не удалось начать пробный доступ" : "Sinov muddatini boshlab bo‘lmadi" },
+      { error: "Sinov muddatini boshlab bo‘lmadi" },
       { status: 500 }
     );
   }

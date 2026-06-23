@@ -7,8 +7,8 @@ export const runtime = "nodejs";
 const goals = new Set(["exam", "travel", "conversation", "work"]);
 const dailyMinutes = new Set([5, 10, 20, 30]);
 
-function toLanguage(value: unknown): AppLanguage {
-  return value === "ru" || value === "en" ? value : "uz";
+function toLanguage(_value: unknown): AppLanguage {
+  return "uz";
 }
 
 export async function POST(request: Request) {
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   const language = toLanguage(body.language);
   const { user, supabase } = await getAuthenticatedServerUser(request);
   if (!user || !supabase) {
-    return NextResponse.json({ error: language === "ru" ? "Сессия не найдена" : "Sessiya topilmadi" }, { status: 401 });
+    return NextResponse.json({ error: "Sessiya topilmadi" }, { status: 401 });
   }
 
   const levelNumber = Number(body.level);
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   if (error) {
     return NextResponse.json(
       {
-        error: language === "ru" ? "Настройки сохранены только на этом устройстве" : "Sozlamalar faqat shu qurilmada saqlandi",
+        error: "Sozlamalar faqat shu qurilmada saqlandi",
         code: "profile_columns_missing"
       },
       { status: 503 }

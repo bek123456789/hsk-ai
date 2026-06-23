@@ -49,8 +49,8 @@ const rateLimits = new Map<string, RateLimitEntry>();
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 12;
 
-function toLanguage(value: unknown): AppLanguage {
-  return value === "ru" || value === "en" ? value : "uz";
+function toLanguage(_value: unknown): AppLanguage {
+  return "uz";
 }
 
 function toLevel(value: unknown): HSKLevel {
@@ -82,7 +82,7 @@ type LocalizedErrorType =
   | "openaiModel"
   | "openaiTimeout";
 
-function localizedError(language: AppLanguage, type: LocalizedErrorType) {
+function localizedError(_language: AppLanguage, type: LocalizedErrorType) {
   const uz = {
     auth: "Sessiya topilmadi. Iltimos, qayta kiring.",
     rate: "Juda ko‘p so‘rov yuborildi. Bir daqiqadan keyin qayta urinib ko‘ring.",
@@ -96,21 +96,7 @@ function localizedError(language: AppLanguage, type: LocalizedErrorType) {
     openaiModel: "AI modeli javob bermadi. Model sozlamalarini tekshiring.",
     openaiTimeout: "AI javobi juda sekin keldi. Birozdan keyin qayta urinib ko‘ring."
   };
-  const ru = {
-    auth: "Сессия не найдена. Пожалуйста, войдите снова.",
-    rate: "Слишком много запросов. Попробуйте снова через минуту.",
-    config: "AI пока недоступен. На сервере не настроен OPENAI_API_KEY.",
-    api: "AI сейчас не смог ответить. Попробуйте ещё раз чуть позже.",
-    message: "Введите текст вопроса.",
-    usage: "Ваш дневной лимит AI закончился. С Premium доступно больше AI-запросов.",
-    openaiAuth: "AI-ключ неверный или не работает. Проверьте настройки сервера.",
-    openaiQuota: "Есть проблема с лимитом или оплатой AI-сервиса. Проверьте аккаунт OpenAI.",
-    openaiRate: "Количество AI-запросов временно ограничено. Попробуйте чуть позже.",
-    openaiModel: "AI-модель не ответила. Проверьте настройки модели.",
-    openaiTimeout: "AI отвечает слишком долго. Попробуйте ещё раз чуть позже."
-  };
-
-  return language === "ru" ? ru[type] : uz[type];
+  return uz[type];
 }
 
 function debugPayload(code: AIDebugCode, extra: Record<string, boolean | string | number | null | undefined> = {}) {

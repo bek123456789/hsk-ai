@@ -63,6 +63,18 @@ function checkDuplicateIds(items: Array<{ id: string }>, label: string) {
   }
 }
 
+function checkDuplicateField<T extends { id: string; level: number }>(items: T[], label: string, getValue: (item: T) => string | undefined) {
+  const seen = new Map<string, string>();
+  for (const item of items) {
+    const value = getValue(item)?.replace(/\s+/g, "").toLowerCase();
+    if (!value) continue;
+    const key = `${item.level}:${value}`;
+    const previous = seen.get(key);
+    if (previous) failures.push(`${label}: duplicate content ${previous} va ${item.id}`);
+    seen.set(key, item.id);
+  }
+}
+
 checkDuplicateIds(vocabularyEntries, "vocabulary");
 for (const word of vocabularyEntries) {
   checkChinese(word.hanzi, "hanzi", word.id);
@@ -74,6 +86,7 @@ for (const word of vocabularyEntries) {
 }
 
 checkDuplicateIds(hskReadingContent, "reading");
+checkDuplicateField(hskReadingContent, "reading passage", (item) => "passageZh" in item ? item.passageZh : undefined);
 for (const item of hskReadingContent) {
   checkChinese(item.passageZh, "passageZh", item.id);
   checkPinyin(item.passagePinyin, "passagePinyin", item.id);
@@ -82,6 +95,7 @@ for (const item of hskReadingContent) {
 }
 
 checkDuplicateIds(hskListeningContent, "listening");
+checkDuplicateField(hskListeningContent, "listening transcript", (item) => "audioTextZh" in item ? item.audioTextZh : undefined);
 for (const item of hskListeningContent) {
   checkChinese(item.audioTextZh, "audioTextZh", item.id);
   checkPinyin(item.audioTextPinyin, "audioTextPinyin", item.id);
