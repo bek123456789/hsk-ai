@@ -1,4 +1,4 @@
-import type { HSKWord, MistakeRecord, WordReviewState } from "@/types";
+import type { AppLanguage, HSKWord, MistakeRecord, WordReviewState } from "@/types";
 
 export type ReviewCardType = "meaning" | "reverse" | "pinyin" | "sentence" | "listening";
 
@@ -106,7 +106,7 @@ export function saveReviewItemFallback(word: HSKWord, review: WordReviewState) {
   }
 }
 
-export function getReviewPrompt(type: ReviewCardType, language: "uz" | "ru") {
+export function getReviewPrompt(type: ReviewCardType, language: AppLanguage) {
   const uz: Record<ReviewCardType, string> = {
     meaning: "Xitoycha so‘zning ma’nosini ayting",
     reverse: "Tarjimadan xitoycha so‘zni eslang",
@@ -121,5 +121,14 @@ export function getReviewPrompt(type: ReviewCardType, language: "uz" | "ru") {
     sentence: "Запомните слово в предложении",
     listening: "Прослушайте и назовите значение"
   };
-  return language === "ru" ? ru[type] : uz[type];
+  const en: Record<ReviewCardType, string> = {
+    meaning: "Say the meaning of the Chinese word",
+    reverse: "Recall the Chinese word from the translation",
+    pinyin: "Recognize the pinyin",
+    sentence: "Remember the word in the sentence",
+    listening: "Listen and say the meaning"
+  };
+  if (language === "ru") return ru[type];
+  if (language === "en") return en[type];
+  return uz[type];
 }

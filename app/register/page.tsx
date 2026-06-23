@@ -7,10 +7,11 @@ export default function RegisterPage() {
   return (
     <AuthShell
       mode="register"
-      title={{ uz: "Hisob yarating", ru: "Создайте аккаунт" }}
+      title={{ uz: "Hisob yarating", ru: "Создайте аккаунт", en: "Create an account" }}
       subtitle={{
         uz: "Xitoy tilini o‘rganishni bugunoq boshlang.",
-        ru: "Начните изучать китайский в HanziFlow AI шаг за шагом."
+        ru: "Начните изучать китайский в HanziFlow AI шаг за шагом.",
+        en: "Start learning Chinese step by step with HanziFlow AI today."
       }}
       footer={
         {
@@ -24,6 +25,12 @@ export default function RegisterPage() {
             <>
               Уже есть аккаунт?{" "}
               <Link href="/login" className="font-black text-orange-brand">Войти</Link>
+            </>
+          ),
+          en: (
+            <>
+              Already have an account?{" "}
+              <Link href="/login" className="font-black text-orange-brand">Sign in</Link>
             </>
           )
         }

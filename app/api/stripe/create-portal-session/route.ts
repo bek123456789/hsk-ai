@@ -14,6 +14,11 @@ function errorMessage(key: "auth" | "missing" | "portal", language: AppLanguage)
       auth: "Сначала войдите в аккаунт",
       missing: "У вас пока нет активной подписки",
       portal: "Не удалось открыть страницу подписки"
+    },
+    en: {
+      auth: "Sign in first",
+      missing: "You do not have an active subscription yet",
+      portal: "Could not open the subscription page"
     }
   };
   return messages[language][key];
@@ -23,7 +28,7 @@ export async function POST(request: Request) {
   let language: AppLanguage = "uz";
   try {
     const body = (await request.json()) as { language?: AppLanguage };
-    language = body.language === "ru" ? "ru" : "uz";
+    language = body.language === "ru" || body.language === "en" ? body.language : "uz";
   } catch {
     language = "uz";
   }

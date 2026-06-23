@@ -23,10 +23,13 @@ import { getLessonLockReason, getNextLesson as getSequentialNextLesson, getPrevi
 import { saveLearningProgress } from "@/utils/learningProgress";
 import { isPremiumProfile } from "@/utils/premium";
 import { speakChinese } from "@/utils/speechSynthesis";
+import type { AppLanguage } from "@/types";
 
-function optionText(option: { textUz?: string; textRu?: string; textZh?: string; textPinyin?: string }, language: "uz" | "ru") {
+function optionText(option: { textUz?: string; textRu?: string; textZh?: string; textPinyin?: string }, language: AppLanguage) {
   return language === "ru"
     ? option.textRu ?? option.textZh ?? option.textPinyin ?? ""
+    : language === "en"
+      ? option.textUz ?? option.textRu ?? option.textZh ?? option.textPinyin ?? ""
     : option.textUz ?? option.textZh ?? option.textPinyin ?? "";
 }
 

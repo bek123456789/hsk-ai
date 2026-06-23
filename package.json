@@ -9,6 +9,7 @@
     "lint": "next lint",
     "validate:content": "tsx scripts/validate-content.ts",
     "validate:translations": "tsx scripts/validate-translations.ts",
+    "test:question-quality": "tsx scripts/test-question-quality.ts",
     "test:ai-health": "tsx scripts/test-ai-health.ts",
     "test:ai-tutor": "tsx scripts/test-ai-tutor.ts",
     "test:subscription": "tsx scripts/test-subscription-status.ts",

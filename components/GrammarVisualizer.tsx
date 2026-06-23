@@ -36,6 +36,16 @@ const roleLabels: Record<AppLanguage, Record<GrammarPart["role"], string>> = {
     question: "Вопросительная частица",
     negation: "Отрицание",
     modifier: "Определение"
+  },
+  en: {
+    subject: "Subject",
+    time: "Time",
+    place: "Place",
+    verb: "Verb",
+    object: "Object",
+    question: "Question particle",
+    negation: "Negation",
+    modifier: "Modifier"
   }
 };
 
@@ -70,7 +80,7 @@ export function GrammarVisualizer({
 
   return (
     <div className={`rounded-[1.75rem] border border-orange-soft/70 bg-white/85 p-4 shadow-soft ${className}`}>
-      <p className="text-xs font-black uppercase text-orange-deep">{language === "ru" ? "Структура предложения" : "Gap tuzilishi"}</p>
+      <p className="text-xs font-black uppercase text-orange-deep">{language === "ru" ? "Структура предложения" : language === "en" ? "Sentence structure" : "Gap tuzilishi"}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {resolvedParts.map((part, index) => (
           <span key={`${part.text}-${index}`} className={`inline-flex flex-col rounded-2xl border px-3 py-2 ${roleStyles[part.role]}`}>

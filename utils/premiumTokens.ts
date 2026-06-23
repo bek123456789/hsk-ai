@@ -19,6 +19,11 @@ export function getBonusTokenLabel(source: TokenRewardSource, language: AppLangu
       streak: "Бонус серии",
       referral: "Бонус приглашения",
       reward_chest: "Бонус ежедневной награды"
+    },
+    en: {
+      streak: "Streak bonus",
+      referral: "Referral bonus",
+      reward_chest: "Daily reward bonus"
     }
   };
   return labels[language][source];

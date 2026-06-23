@@ -7,7 +7,7 @@ import { Card } from "@/components/Card";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getCurriculumLesson } from "@/data/hsk/lessonCurriculum";
 import { useProgressStore } from "@/store/progressStore";
-import type { ExamSkill, HSKLevel } from "@/types";
+import type { AppLanguage, ExamSkill, HSKLevel } from "@/types";
 import { formatSeconds } from "@/utils/exam";
 import { EXAM_PASSING_SCORE } from "@/utils/examScoring";
 import { useI18n } from "@/utils/i18n";
@@ -15,10 +15,11 @@ import { parseHskLevel } from "@/utils/level";
 
 const icons = { listening: Headphones, reading: BookOpen, speaking: Mic, writing: PenLine };
 
-function skillLabel(skill: ExamSkill, language: "uz" | "ru") {
+function skillLabel(skill: ExamSkill, language: AppLanguage) {
   const labels = {
     uz: { listening: "Listening bo‘limi", reading: "O‘qish bo‘limi", speaking: "Speaking bo‘limi", writing: "Writing bo‘limi" },
-    ru: { listening: "Раздел аудирования", reading: "Раздел чтения", speaking: "Раздел говорения", writing: "Раздел письма" }
+    ru: { listening: "Раздел аудирования", reading: "Раздел чтения", speaking: "Раздел говорения", writing: "Раздел письма" },
+    en: { listening: "Listening section", reading: "Reading section", speaking: "Speaking section", writing: "Writing section" }
   };
   return labels[language][skill];
 }

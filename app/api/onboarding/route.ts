@@ -7,6 +7,10 @@ export const runtime = "nodejs";
 const goals = new Set(["exam", "travel", "conversation", "work"]);
 const dailyMinutes = new Set([5, 10, 20, 30]);
 
+function toLanguage(value: unknown): AppLanguage {
+  return value === "ru" || value === "en" ? value : "uz";
+}
+
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     language?: unknown;
@@ -16,7 +20,7 @@ export async function POST(request: Request) {
     referredBy?: unknown;
     skip?: unknown;
   };
-  const language: AppLanguage = body.language === "ru" ? "ru" : "uz";
+  const language = toLanguage(body.language);
   const { user, supabase } = await getAuthenticatedServerUser(request);
   if (!user || !supabase) {
     return NextResponse.json({ error: language === "ru" ? "Сессия не найдена" : "Sessiya topilmadi" }, { status: 401 });

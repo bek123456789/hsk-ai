@@ -12,7 +12,7 @@ import { UsageLimitOverview } from "@/components/UsageLimitOverview";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/authStore";
 import { useProgressStore } from "@/store/progressStore";
-import type { HSKLevel } from "@/types";
+import type { AppLanguage, HSKLevel } from "@/types";
 import { useI18n } from "@/utils/i18n";
 import { recordLocalAIUsage } from "@/utils/aiUsageClient";
 import { logAppError } from "@/utils/appLogger";
@@ -452,27 +452,28 @@ async function readTutorResponse(response: Response): Promise<TutorResponse> {
   }
 }
 
-function getCleanAIError(error: string | undefined | null, code: string | undefined, language: "uz" | "ru", status?: number) {
+function getCleanAIError(error: string | undefined | null, code: string | undefined, language: AppLanguage, status?: number) {
+  const copy = (uz: string, ru: string, en: string) => language === "ru" ? ru : language === "en" ? en : uz;
   if (code === "missing_openai_key") {
-    return language === "ru" ? "Проверьте настройки сервера." : "Server sozlamalarini tekshiring.";
+    return copy("Server sozlamalarini tekshiring.", "Проверьте настройки сервера.", "Check the server settings.");
   }
   if (code === "openai_auth_failed") {
-    return error || (language === "ru" ? "Проверьте настройки сервера." : "Server sozlamalarini tekshiring.");
+    return error || copy("Server sozlamalarini tekshiring.", "Проверьте настройки сервера.", "Check the server settings.");
   }
   if (code === "openai_quota_failed") {
-    return error || (language === "ru" ? "Проверьте аккаунт OpenAI." : "OpenAI hisobingizni tekshiring.");
+    return error || copy("OpenAI hisobingizni tekshiring.", "Проверьте аккаунт OpenAI.", "Check the OpenAI account.");
   }
   if (code === "openai_rate_limited") {
-    return error || (language === "ru" ? "Количество AI-запросов временно ограничено. Попробуйте чуть позже." : "AI so‘rovlar soni vaqtincha cheklangan. Birozdan keyin urinib ko‘ring.");
+    return error || copy("AI so‘rovlar soni vaqtincha cheklangan. Birozdan keyin urinib ko‘ring.", "Количество AI-запросов временно ограничено. Попробуйте чуть позже.", "AI requests are temporarily limited. Try again shortly.");
   }
   if (code === "openai_model_failed") {
-    return error || (language === "ru" ? "Проверьте настройки модели." : "Model sozlamalarini tekshiring.");
+    return error || copy("Model sozlamalarini tekshiring.", "Проверьте настройки модели.", "Check the model settings.");
   }
   if (code === "openai_timeout") {
-    return error || (language === "ru" ? "AI отвечает слишком долго. Попробуйте ещё раз чуть позже." : "AI javobi juda sekin keldi. Birozdan keyin qayta urinib ko‘ring.");
+    return error || copy("AI javobi juda sekin keldi. Birozdan keyin qayta urinib ko‘ring.", "AI отвечает слишком долго. Попробуйте ещё раз чуть позже.", "AI is taking too long to respond. Try again shortly.");
   }
   if (code === "usage_limit_exceeded" || code === "daily_ai_limit_reached") {
-    return error || (language === "ru" ? "Ваш дневной лимит AI закончился. С Premium доступно больше AI-запросов." : "Bugungi AI limitingiz tugadi. Premium bilan ko‘proq AI savollar ishlatishingiz mumkin.");
+    return error || copy("Bugungi AI limitingiz tugadi. Premium bilan ko‘proq AI savollar ishlatishingiz mumkin.", "Ваш дневной лимит AI закончился. С Premium доступно больше AI-запросов.", "Your daily AI limit is used. Premium includes more AI requests.");
   }
   if (status === 401 || code === "unauthenticated") {
     return language === "ru" ? "Сессия не найдена или не подтверждена. Пожалуйста, подтвердите email или войдите заново." : "Sessiya topilmadi yoki tasdiqlanmagan. Iltimos, emailingizni tasdiqlang yoki qayta kiring.";

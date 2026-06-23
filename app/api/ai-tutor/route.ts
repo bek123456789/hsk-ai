@@ -50,7 +50,7 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 12;
 
 function toLanguage(value: unknown): AppLanguage {
-  return value === "ru" ? "ru" : "uz";
+  return value === "ru" || value === "en" ? value : "uz";
 }
 
 function toLevel(value: unknown): HSKLevel {

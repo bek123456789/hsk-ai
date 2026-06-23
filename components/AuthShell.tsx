@@ -4,60 +4,71 @@ import { BarChart3, Brain, CheckCircle2, GraduationCap, LineChart, RotateCcw, Sp
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
+import type { AppLanguage } from "@/types";
 import { useI18n } from "@/utils/i18n";
 
 type LocalizedCopy = string | {
   uz: string;
   ru: string;
+  en?: string;
 };
 
 type LocalizedNode = ReactNode | {
   uz: ReactNode;
   ru: ReactNode;
+  en?: ReactNode;
 };
 
 type AuthShellMode = "login" | "register" | "forgot";
 
-function pickCopy(copy: LocalizedCopy, language: "uz" | "ru") {
-  return typeof copy === "string" ? copy : copy[language];
+function pickCopy(copy: LocalizedCopy, language: AppLanguage) {
+  if (typeof copy === "string") return copy;
+  if (language === "en") return copy.en ?? copy.uz;
+  return copy[language];
 }
 
-function pickNode(node: LocalizedNode, language: "uz" | "ru") {
-  if (node && typeof node === "object" && "uz" in node && "ru" in node) return node[language];
+function pickNode(node: LocalizedNode, language: AppLanguage) {
+  if (node && typeof node === "object" && "uz" in node && "ru" in node) return language === "en" ? node.en ?? node.uz : node[language];
   return node as ReactNode;
 }
 
-function AuthFeaturePreview({ mode, language }: { mode: AuthShellMode; language: "uz" | "ru" }) {
+function AuthFeaturePreview({ mode, language }: { mode: AuthShellMode; language: AppLanguage }) {
   const register = mode === "register";
   const forgot = mode === "forgot";
   const headline = register
     ? {
         uz: <>Xitoy tili va HSK tayyorgarligi <span className="text-[#FF6B1A]">bir joyda</span></>,
-        ru: <>Китайский и подготовка к HSK <span className="text-[#FF6B1A]">в одном месте</span></>
+        ru: <>Китайский и подготовка к HSK <span className="text-[#FF6B1A]">в одном месте</span></>,
+        en: <>Chinese and HSK preparation <span className="text-[#FF6B1A]">in one place</span></>
       }
     : forgot
       ? {
           uz: <>Hisobingizga qaytish <span className="text-[#FF6B1A]">oson</span></>,
-          ru: <>Вернуться к аккаунту <span className="text-[#FF6B1A]">просто</span></>
+          ru: <>Вернуться к аккаунту <span className="text-[#FF6B1A]">просто</span></>,
+          en: <>Returning to your account is <span className="text-[#FF6B1A]">simple</span></>
         }
       : {
           uz: <>Darslaringizni davom <span className="text-[#FF6B1A]">ettiring</span></>,
-          ru: <>Продолжайте <span className="text-[#FF6B1A]">обучение</span></>
+          ru: <>Продолжайте <span className="text-[#FF6B1A]">обучение</span></>,
+          en: <>Continue your <span className="text-[#FF6B1A]">lessons</span></>
         };
 
   const subtitle = register
     ? {
         uz: "Darslar, speaking, listening, reading, writing, aqlli takrorlash va AI yordamchi bilan o‘rganing.",
-        ru: "Учитесь с уроками, speaking, listening, reading, writing, умным повторением и AI-помощником."
+        ru: "Учитесь с уроками, speaking, listening, reading, writing, умным повторением и AI-помощником.",
+        en: "Learn with lessons, speaking, listening, reading, writing, Smart Review, and an AI Coach."
       }
     : forgot
       ? {
           uz: "Emailingizga tiklash havolasi yuboriladi, keyin parolni xavfsiz yangilaysiz.",
-          ru: "Мы отправим ссылку восстановления на email, затем вы безопасно обновите пароль."
+          ru: "Мы отправим ссылку восстановления на email, затем вы безопасно обновите пароль.",
+          en: "We will send a reset link to your email so you can update your password safely."
         }
       : {
           uz: "Zaif so‘zlar takrorlanadi, AI yordamchisi yo‘l-yo‘riq beradi, natijalar esa sizni oldinga yetaklaydi.",
-          ru: "Слабые слова повторяются, AI-помощник подсказывает путь, а результаты ведут вас вперёд."
+          ru: "Слабые слова повторяются, AI-помощник подсказывает путь, а результаты ведут вас вперёд.",
+          en: "Weak words are reviewed, the AI Coach guides you, and progress keeps you moving forward."
         };
 
   const features = [
@@ -65,22 +76,28 @@ function AuthFeaturePreview({ mode, language }: { mode: AuthShellMode; language:
       icon: RotateCcw,
       titleUz: "Aqlli takrorlash",
       titleRu: "Умное повторение",
+      titleEn: "Smart Review",
       detailUz: "Zaif so‘zlaringizni aniqlab, samarali takrorlaysiz.",
-      detailRu: "Находите слабые слова и повторяйте их эффективно."
+      detailRu: "Находите слабые слова и повторяйте их эффективно.",
+      detailEn: "Find weak words and review them effectively."
     },
     {
       icon: Brain,
       titleUz: "AI murabbiy",
       titleRu: "AI-тренер",
+      titleEn: "AI Coach",
       detailUz: "Shaxsiy tavsiyalar va o‘quv rejalari.",
-      detailRu: "Личные рекомендации и учебные планы."
+      detailRu: "Личные рекомендации и учебные планы.",
+      detailEn: "Personal recommendations and study plans."
     },
     {
       icon: BarChart3,
       titleUz: "Imtihon natijalari",
       titleRu: "Результаты экзаменов",
+      titleEn: "Exam results",
       detailUz: "Yutuqlaringizni kuzatib boring.",
-      detailRu: "Следите за своими достижениями."
+      detailRu: "Следите за своими достижениями.",
+      detailEn: "Track your achievements and results."
     }
   ];
 
@@ -93,14 +110,14 @@ function AuthFeaturePreview({ mode, language }: { mode: AuthShellMode; language:
         <div className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#F3D8C3] bg-[#FFF7ED]/90 px-3 py-2 text-xs font-black text-[#9A4B14] shadow-sm">
             <Sparkles className="h-4 w-4 text-[#FF6B1A]" />
-            HSK 1–6 + AI yordamchi
+            {language === "ru" ? "HSK 1–6 + AI помощник" : language === "en" ? "HSK 1–6 + AI Coach" : "HSK 1–6 + AI yordamchi"}
           </div>
 
           <h2 className="mt-7 max-w-xl text-4xl font-black leading-[1.05] text-[#241A14] xl:text-5xl">
-            {language === "ru" ? headline.ru : headline.uz}
+            {language === "ru" ? headline.ru : language === "en" ? headline.en : headline.uz}
           </h2>
           <p className="mt-5 max-w-xl text-base font-semibold leading-8 text-[#6F625A]">
-            {language === "ru" ? subtitle.ru : subtitle.uz}
+            {language === "ru" ? subtitle.ru : language === "en" ? subtitle.en : subtitle.uz}
           </p>
 
           <div className="mt-8 grid gap-3">
@@ -112,8 +129,8 @@ function AuthFeaturePreview({ mode, language }: { mode: AuthShellMode; language:
                     <Icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-[#241A14]">{language === "ru" ? feature.titleRu : feature.titleUz}</p>
-                    <p className="mt-1 text-sm font-semibold leading-6 text-[#6F625A]">{language === "ru" ? feature.detailRu : feature.detailUz}</p>
+                    <p className="text-sm font-black text-[#241A14]">{language === "ru" ? feature.titleRu : language === "en" ? feature.titleEn : feature.titleUz}</p>
+                    <p className="mt-1 text-sm font-semibold leading-6 text-[#6F625A]">{language === "ru" ? feature.detailRu : language === "en" ? feature.detailEn : feature.detailUz}</p>
                   </div>
                 </div>
               );
@@ -123,13 +140,13 @@ function AuthFeaturePreview({ mode, language }: { mode: AuthShellMode; language:
           <div className="mt-8 rounded-[1.85rem] border border-[#F3D8C3] bg-gradient-to-br from-white via-white to-[#FFF1E2] p-5 shadow-[0_18px_48px_rgba(120,74,28,0.10)]">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#FFF7ED] px-3 py-1.5 text-xs font-black text-[#B45309]">
               <LineChart className="h-4 w-4" />
-              {language === "ru" ? "Демо-вид" : "Demo ko‘rinish"}
+              {language === "ru" ? "Демо-вид" : language === "en" ? "Demo view" : "Demo ko‘rinish"}
             </div>
 
             <div className="rounded-[1.35rem] border border-[#F3D8C3]/70 bg-white p-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-black uppercase text-[#9A4B14]">{language === "ru" ? "Текущий урок" : "JORIY DARS"}</p>
+                  <p className="text-[11px] font-black uppercase text-[#9A4B14]">{language === "ru" ? "Текущий урок" : language === "en" ? "CURRENT LESSON" : "JORIY DARS"}</p>
                   <h3 className="mt-1 text-lg font-black text-[#241A14]">HSK 1 — 1-dars</h3>
                 </div>
                 <span className="rounded-full bg-[#FFF0DE] px-3 py-1.5 text-xs font-black text-[#FF6B1A]">0%</span>
@@ -142,13 +159,13 @@ function AuthFeaturePreview({ mode, language }: { mode: AuthShellMode; language:
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div className="rounded-[1.25rem] border border-[#F3D8C3]/70 bg-white/88 p-4">
                 <Target className="h-5 w-5 text-[#FF6B1A]" />
-                <p className="mt-2 text-xs font-black text-[#6F625A]">{language === "ru" ? "План на сегодня" : "Bugungi reja"}</p>
-                <p className="mt-1 text-sm font-black text-[#241A14]">{language === "ru" ? "3 упражнения" : "3 ta mashq"}</p>
+                <p className="mt-2 text-xs font-black text-[#6F625A]">{language === "ru" ? "План на сегодня" : language === "en" ? "Today’s plan" : "Bugungi reja"}</p>
+                <p className="mt-1 text-sm font-black text-[#241A14]">{language === "ru" ? "3 упражнения" : language === "en" ? "3 tasks" : "3 ta mashq"}</p>
               </div>
               <div className="rounded-[1.25rem] border border-[#F3D8C3]/70 bg-white/88 p-4">
                 <GraduationCap className="h-5 w-5 text-[#FF6B1A]" />
-                <p className="mt-2 text-xs font-black text-[#6F625A]">{language === "ru" ? "Повторение" : "Takrorlash"}</p>
-                <p className="mt-1 text-sm font-black text-[#241A14]">{language === "ru" ? "0 слов" : "0 so‘z"}</p>
+                <p className="mt-2 text-xs font-black text-[#6F625A]">{language === "ru" ? "Повторение" : language === "en" ? "Review" : "Takrorlash"}</p>
+                <p className="mt-1 text-sm font-black text-[#241A14]">{language === "ru" ? "0 слов" : language === "en" ? "0 words" : "0 so‘z"}</p>
               </div>
             </div>
           </div>
@@ -170,7 +187,7 @@ export function AuthShell({ mode = "login", title, subtitle, children, footer }:
           <BrandLogo variant="full" size="sm" />
         </Link>
         <div className="inline-flex rounded-full border border-[#F3D8C3] bg-white/86 p-1 shadow-[0_12px_34px_rgba(120,74,28,0.08)] backdrop-blur">
-          {(["uz", "ru"] as const).map((item) => (
+          {(["uz", "ru", "en"] as const).map((item) => (
             <button
               key={item}
               type="button"
@@ -179,7 +196,7 @@ export function AuthShell({ mode = "login", title, subtitle, children, footer }:
                 language === item ? "bg-[#FF6B1A] text-white shadow-sm" : "text-[#6F625A] hover:bg-[#FFF0DE] hover:text-[#241A14]"
               }`}
             >
-              {item === "uz" ? "UZ" : "RU"}
+              {item.toUpperCase()}
             </button>
           ))}
         </div>
@@ -192,7 +209,7 @@ export function AuthShell({ mode = "login", title, subtitle, children, footer }:
           <div className="mb-5 text-center lg:hidden">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#F3D8C3] bg-white/80 px-3 py-1.5 text-xs font-black text-[#B45309] shadow-sm">
               <Sparkles className="h-4 w-4 text-[#FF6B1A]" />
-              HSK 1–6 + AI yordamchi
+              {language === "ru" ? "HSK 1–6 + AI помощник" : language === "en" ? "HSK 1–6 + AI Coach" : "HSK 1–6 + AI yordamchi"}
             </div>
           </div>
 

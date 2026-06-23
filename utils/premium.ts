@@ -59,6 +59,15 @@ export function getSubscriptionStatusLabel(status: SubscriptionStatus | null | u
       canceled: "Отменено",
       unpaid: "Не оплачено",
       beta_premium: "Тестовый Premium"
+    },
+    en: {
+      free: "Free plan",
+      active: "Premium active",
+      trialing: "Premium trial active",
+      past_due: "Payment pending",
+      canceled: "Canceled",
+      unpaid: "Unpaid",
+      beta_premium: "Test Premium"
     }
   };
 
@@ -94,9 +103,22 @@ export function getPremiumLockMessage(featureKey: string, locale: AppLanguage) {
       examCoach: "Экзаменационный наставник",
       conversation: "Диалог с ИИ",
       voiceConversation: "Голосовой диалог"
+    },
+    en: {
+      aiTutor: "AI Coach",
+      speaking: "Pronunciation check",
+      hskFull: "Full HSK 2–6 access",
+      exams: "Full exams",
+      certificates: "Certificates",
+      analytics: "Advanced analytics",
+      examCoach: "Exam coach",
+      conversation: "AI conversation",
+      voiceConversation: "Voice conversation"
     }
   };
 
   const feature = featureLabels[locale][featureKey] ?? featureKey;
-  return locale === "ru" ? `${feature} доступен в Premium.` : `${feature} Premium uchun ochiladi.`;
+  if (locale === "ru") return `${feature} доступен в Premium.`;
+  if (locale === "en") return `${feature} is available with Premium.`;
+  return `${feature} Premium uchun ochiladi.`;
 }

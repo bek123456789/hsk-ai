@@ -21,6 +21,12 @@ function localized(language: AppLanguage, key: "ok" | "activated" | "missing" | 
       activated: "Premium активирован",
       missing: "Сессия не найдена",
       failed: "Не удалось проверить Premium"
+    },
+    en: {
+      ok: "Premium status checked",
+      activated: "Premium activated",
+      missing: "Session was not found",
+      failed: "Could not verify Premium"
     }
   };
   return messages[language][key];
@@ -43,7 +49,7 @@ function getPeriodEnd(subscription: Stripe.Subscription) {
 async function parseRequest(request: Request) {
   const url = new URL(request.url);
   let sessionId = url.searchParams.get("session_id");
-  let language: AppLanguage = url.searchParams.get("language") === "ru" ? "ru" : "uz";
+  let language: AppLanguage = url.searchParams.get("language") === "ru" ? "ru" : url.searchParams.get("language") === "en" ? "en" : "uz";
 
   if (request.method === "POST") {
     const body = (await request.json().catch(() => ({}))) as { session_id?: unknown; language?: unknown };

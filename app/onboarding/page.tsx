@@ -14,15 +14,21 @@ const minutes = [5, 10, 20, 30] as const;
 const hskLevels = [1, 2, 3, 4, 5, 6] as HSKLevel[];
 
 const placementQuestions = [
-  { id: "p1", zh: "你好", uz: "salom", ru: "привет", correct: "hello" },
-  { id: "p2", zh: "我学习汉语。", uz: "Men xitoy tilini o‘rganaman.", ru: "Я изучаю китайский.", correct: "study" },
-  { id: "p3", zh: "今天几月几号？", uz: "Bugun nechanchi sana?", ru: "Какое сегодня число?", correct: "date" },
-  { id: "p4", zh: "他比我高。", uz: "U mendan balandroq.", ru: "Он выше меня.", correct: "compare" },
-  { id: "p5", zh: "虽然下雨，但是我们还去学校。", uz: "Yomg‘ir yog‘sa ham, biz baribir maktabga boramiz.", ru: "Хотя идёт дождь, мы всё равно идём в школу.", correct: "although" },
-  { id: "p6", zh: "这个决定会影响我们的计划。", uz: "Bu qaror rejamizga ta’sir qiladi.", ru: "Это решение повлияет на наш план.", correct: "influence" },
-  { id: "p7", zh: "他提出了一个值得讨论的观点。", uz: "U muhokama qilishga arziydigan fikr bildirdi.", ru: "Он высказал идею, которую стоит обсудить.", correct: "opinion" },
-  { id: "p8", zh: "我们应该从不同角度分析这个问题。", uz: "Bu muammoni turli tomondan tahlil qilishimiz kerak.", ru: "Нужно анализировать этот вопрос с разных сторон.", correct: "analysis" }
+  { id: "p1", zh: "你好", uz: "salom", ru: "привет", en: "hello", correct: "hello" },
+  { id: "p2", zh: "我学习汉语。", uz: "Men xitoy tilini o‘rganaman.", ru: "Я изучаю китайский.", en: "I study Chinese.", correct: "study" },
+  { id: "p3", zh: "今天几月几号？", uz: "Bugun nechanchi sana?", ru: "Какое сегодня число?", en: "What is today’s date?", correct: "date" },
+  { id: "p4", zh: "他比我高。", uz: "U mendan balandroq.", ru: "Он выше меня.", en: "He is taller than me.", correct: "compare" },
+  { id: "p5", zh: "虽然下雨，但是我们还去学校。", uz: "Yomg‘ir yog‘sa ham, biz baribir maktabga boramiz.", ru: "Хотя идёт дождь, мы всё равно идём в школу.", en: "Although it is raining, we still go to school.", correct: "although" },
+  { id: "p6", zh: "这个决定会影响我们的计划。", uz: "Bu qaror rejamizga ta’sir qiladi.", ru: "Это решение повлияет на наш план.", en: "This decision will affect our plan.", correct: "influence" },
+  { id: "p7", zh: "他提出了一个值得讨论的观点。", uz: "U muhokama qilishga arziydigan fikr bildirdi.", ru: "Он высказал идею, которую стоит обсудить.", en: "He proposed an idea worth discussing.", correct: "opinion" },
+  { id: "p8", zh: "我们应该从不同角度分析这个问题。", uz: "Bu muammoni turli tomondan tahlil qilishimiz kerak.", ru: "Нужно анализировать этот вопрос с разных сторон.", en: "We should analyze this problem from different angles.", correct: "analysis" }
 ] as const;
+
+function tr(language: AppLanguage, uz: string, ru: string, en: string) {
+  if (language === "ru") return ru;
+  if (language === "en") return en;
+  return uz;
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -39,19 +45,12 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const goals = language === "ru"
-    ? [
-        ["exam", "Подготовка к экзамену HSK"],
-        ["travel", "Китайский для путешествий"],
-        ["conversation", "Ежедневное общение"],
-        ["work", "Работа или учёба"]
-      ]
-    : [
-        ["exam", "HSK imtihoniga tayyorgarlik"],
-        ["travel", "Sayohat uchun xitoy tili"],
-        ["conversation", "Kundalik suhbat"],
-        ["work", "Ish yoki o‘qish"]
-      ];
+  const goals = [
+    ["exam", tr(language, "HSK imtihoniga tayyorgarlik", "Подготовка к экзамену HSK", "HSK exam preparation")],
+    ["travel", tr(language, "Sayohat uchun xitoy tili", "Китайский для путешествий", "Chinese for travel")],
+    ["conversation", tr(language, "Kundalik suhbat", "Ежедневное общение", "Daily conversation")],
+    ["work", tr(language, "Ish yoki o‘qish", "Работа или учёба", "Work or study")]
+  ];
 
   const placementScore = Object.values(answers).filter(Boolean).length;
   const recommendedLevel = useMemo<HSKLevel>(() => {
@@ -128,9 +127,9 @@ export default function OnboardingPage() {
       <Globe2 className="h-8 w-8 text-orange-brand" />
       <h1 className="mt-5 text-4xl font-black text-ink sm:text-5xl">{language === "ru" ? "Выберите язык" : "Interfeys tilini tanlang"}</h1>
       <div className="mt-7 grid gap-3 sm:grid-cols-2">
-        {(["uz", "ru"] as AppLanguage[]).map((item) => (
+        {(["uz", "ru", "en"] as AppLanguage[]).map((item) => (
           <button key={item} onClick={() => setLanguage(item)} className={`rounded-3xl border p-5 text-left text-lg font-black shadow-soft ${language === item ? "border-orange-brand bg-orange-soft text-orange-deep" : "border-white bg-white text-ink"}`}>
-            {item === "uz" ? "O‘zbekcha" : "Русский"}
+            {item === "uz" ? "O‘zbekcha" : item === "ru" ? "Русский" : "English"}
           </button>
         ))}
       </div>
@@ -174,10 +173,10 @@ export default function OnboardingPage() {
               <p className="text-lg font-black text-ink">{index + 1}. {question.zh}</p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <button onClick={() => setAnswers((current) => ({ ...current, [question.id]: true }))} className={`rounded-2xl px-4 py-3 text-left text-sm font-black shadow-soft ${answers[question.id] === true ? "bg-orange-brand text-white" : "bg-white text-ink"}`}>
-                  {language === "ru" ? question.ru : question.uz}
+                  {language === "ru" ? question.ru : language === "en" ? question.en : question.uz}
                 </button>
                 <button onClick={() => setAnswers((current) => ({ ...current, [question.id]: false }))} className={`rounded-2xl px-4 py-3 text-left text-sm font-black shadow-soft ${answers[question.id] === false ? "bg-stone-700 text-white" : "bg-white text-ink"}`}>
-                  {language === "ru" ? "Другое значение" : "Boshqa ma’no"}
+                  {tr(language, "Boshqa ma’no", "Другое значение", "Different meaning")}
                 </button>
               </div>
             </div>

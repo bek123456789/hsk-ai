@@ -26,11 +26,13 @@ import Link from "next/link";
 import { AppButton } from "@/components/AppButton";
 import { BrandLogo } from "@/components/BrandLogo";
 import { useAuthStore } from "@/store/authStore";
+import type { AppLanguage } from "@/types";
 import { useI18n } from "@/utils/i18n";
 
 type Localized = {
   uz: string;
   ru: string;
+  en?: string;
 };
 
 type CardItem = {
@@ -40,92 +42,99 @@ type CardItem = {
   href?: string;
 };
 
-function text(value: Localized, language: "uz" | "ru") {
+function text(value: Localized, language: AppLanguage) {
+  if (language === "en") return value.en ?? value.uz;
   return value[language];
+}
+
+function copy(language: AppLanguage, uz: string, ru: string, en: string) {
+  if (language === "ru") return ru;
+  if (language === "en") return en;
+  return uz;
 }
 
 const problems: CardItem[] = [
   {
     icon: Search,
-    title: { uz: "Ierogliflarni eslab qolish qiyin", ru: "Трудно запоминать иероглифы" },
-    detail: { uz: "Hanzi shakli, ma’nosi va pinyin bir vaqtda mustahkamlanishi kerak.", ru: "Нужно одновременно закреплять форму, смысл и pinyin." }
+    title: { uz: "Ierogliflarni eslab qolish qiyin", ru: "Трудно запоминать иероглифы", en: "Hanzi are hard to remember" },
+    detail: { uz: "Hanzi shakli, ma’nosi va pinyin bir vaqtda mustahkamlanishi kerak.", ru: "Нужно одновременно закреплять форму, смысл и pinyin.", en: "Shape, meaning, and pinyin need to be reinforced together." }
   },
   {
     icon: Volume2,
-    title: { uz: "Tonlarni farqlash qiyin", ru: "Трудно различать тоны" },
-    detail: { uz: "Ohang o‘zgarsa, so‘z ma’nosi ham o‘zgarishi mumkin.", ru: "Если тон меняется, значение слова тоже может измениться." }
+    title: { uz: "Tonlarni farqlash qiyin", ru: "Трудно различать тоны", en: "Tones are hard to hear" },
+    detail: { uz: "Ohang o‘zgarsa, so‘z ma’nosi ham o‘zgarishi mumkin.", ru: "Если тон меняется, значение слова тоже может измениться.", en: "When the tone changes, the word meaning can change too." }
   },
   {
     icon: Keyboard,
-    title: { uz: "Gap tartibi boshqacha", ru: "Порядок слов другой" },
-    detail: { uz: "Xitoycha gaplar qisqa, lekin tartib va yuklamalar muhim.", ru: "Китайские фразы короткие, но порядок и частицы важны." }
+    title: { uz: "Gap tartibi boshqacha", ru: "Порядок слов другой", en: "Word order is different" },
+    detail: { uz: "Xitoycha gaplar qisqa, lekin tartib va yuklamalar muhim.", ru: "Китайские фразы короткие, но порядок и частицы важны.", en: "Chinese sentences are short, but order and particles matter." }
   },
   {
     icon: MessageCircle,
-    title: { uz: "Speaking va writingda feedback kerak", ru: "Нужна обратная связь в speaking и writing" },
-    detail: { uz: "Javob to‘g‘rimi, qaysi joyi yetishmayapti — buni tez bilish kerak.", ru: "Важно быстро понять, верен ли ответ и чего не хватает." }
+    title: { uz: "Speaking va writingda feedback kerak", ru: "Нужна обратная связь в speaking и writing", en: "Speaking and writing need feedback" },
+    detail: { uz: "Javob to‘g‘rimi, qaysi joyi yetishmayapti — buni tez bilish kerak.", ru: "Важно быстро понять, верен ли ответ и чего не хватает.", en: "Learners need to know quickly what is correct and what is missing." }
   }
 ];
 
 const solutions: CardItem[] = [
   {
     icon: Search,
-    title: { uz: "Hanzi Builder", ru: "Hanzi Builder" },
-    detail: { uz: "Ieroglifni pinyin, ma’no, misol va eslab qolish usuli bilan tahlil qiladi.", ru: "Разбирает иероглиф через pinyin, смысл, пример и способ запомнить." },
+    title: { uz: "Hanzi Builder", ru: "Hanzi Builder", en: "Hanzi Builder" },
+    detail: { uz: "Ieroglifni pinyin, ma’no, misol va eslab qolish usuli bilan tahlil qiladi.", ru: "Разбирает иероглиф через pinyin, смысл, пример и способ запомнить.", en: "Breaks down hanzi through pinyin, meaning, examples, and memory tips." },
     href: "/hanzi-builder"
   },
   {
     icon: Volume2,
-    title: { uz: "Ton mashqi", ru: "Тренировка тонов" },
-    detail: { uz: "Eshitib tonni tanlaysiz va ohanglarni farqlashni o‘rganasiz.", ru: "Слушаете и выбираете тон, тренируя различение звучания." },
+    title: { uz: "Ton mashqi", ru: "Тоны", en: "Tone Trainer" },
+    detail: { uz: "Eshitib tonni tanlaysiz va ohanglarni farqlashni o‘rganasiz.", ru: "Слушаете и выбираете тон, тренируя различение звучания.", en: "Listen, choose tones, and train sound recognition." },
     href: "/tone-trainer"
   },
   {
     icon: Keyboard,
-    title: { uz: "Gap tuzish", ru: "Составление предложений" },
-    detail: { uz: "So‘zlarni to‘g‘ri tartibga qo‘yib, xitoycha gap tuzilishini tushunasiz.", ru: "Ставите слова в правильном порядке и понимаете структуру фразы." },
+    title: { uz: "Gap tuzish", ru: "Предложения", en: "Sentence Builder" },
+    detail: { uz: "So‘zlarni to‘g‘ri tartibga qo‘yib, xitoycha gap tuzilishini tushunasiz.", ru: "Ставите слова в правильном порядке и понимаете структуру фразы.", en: "Arrange words correctly and understand Chinese sentence structure." },
     href: "/sentence-builder"
   },
   {
     icon: RotateCcw,
-    title: { uz: "Aqlli takrorlash", ru: "Умное повторение" },
-    detail: { uz: "Zaif so‘zlar tezroq qaytadi, o‘zlashtirilganlari esa kamroq chiqadi.", ru: "Слабые слова возвращаются чаще, освоенные — реже." },
+    title: { uz: "Aqlli takrorlash", ru: "Умное повторение", en: "Smart Review" },
+    detail: { uz: "Zaif so‘zlar tezroq qaytadi, o‘zlashtirilganlari esa kamroq chiqadi.", ru: "Слабые слова возвращаются чаще, освоенные — реже.", en: "Weak words return sooner, mastered words appear less often." },
     href: "/review"
   },
   {
     icon: Brain,
-    title: { uz: "AI Study Coach", ru: "AI Study Coach" },
-    detail: { uz: "Rivojlanishingizga qarab keyingi real qadamni tavsiya qiladi.", ru: "Советует следующий реальный шаг на основе прогресса." },
+    title: { uz: "AI Study Coach", ru: "AI Study Coach", en: "AI Study Coach" },
+    detail: { uz: "Rivojlanishingizga qarab keyingi real qadamni tavsiya qiladi.", ru: "Советует следующий реальный шаг на основе прогресса.", en: "Recommends the next realistic step based on your progress." },
     href: "/ai-tutor"
   },
   {
     icon: LineChart,
-    title: { uz: "Imtihonga tayyorlik", ru: "Готовность к экзамену" },
-    detail: { uz: "Dars, takrorlash va imtihon natijalari asosida zaif ko‘nikmalarni ko‘rsatadi.", ru: "Показывает слабые навыки по урокам, повторению и экзаменам." },
+    title: { uz: "Imtihonga tayyorlik", ru: "Готовность", en: "Exam Readiness" },
+    detail: { uz: "Dars, takrorlash va imtihon natijalari asosida zaif ko‘nikmalarni ko‘rsatadi.", ru: "Показывает слабые навыки по урокам, повторению и экзаменам.", en: "Shows weak skills based on lessons, review, and exam results." },
     href: "/exam"
   }
 ];
 
 const flow = [
-  { uz: "Onboarding", ru: "Onboarding" },
-  { uz: "HSK 1 darsini boshlash", ru: "Начать урок HSK 1" },
-  { uz: "Vocabulary + Grammar", ru: "Vocabulary + Grammar" },
-  { uz: "Reading + Listening", ru: "Reading + Listening" },
-  { uz: "Speaking + Writing", ru: "Speaking + Writing" },
-  { uz: "Mini test", ru: "Мини-тест" },
-  { uz: "Exam 80%", ru: "Экзамен 80%" },
-  { uz: "Keyingi HSK ochiladi", ru: "Открывается следующий HSK" }
+  { uz: "Onboarding", ru: "Onboarding", en: "Onboarding" },
+  { uz: "HSK 1 darsini boshlash", ru: "Начать урок HSK 1", en: "Start HSK 1 lesson" },
+  { uz: "Vocabulary + Grammar", ru: "Vocabulary + Grammar", en: "Vocabulary + Grammar" },
+  { uz: "Reading + Listening", ru: "Reading + Listening", en: "Reading + Listening" },
+  { uz: "Speaking + Writing", ru: "Speaking + Writing", en: "Speaking + Writing" },
+  { uz: "Mini test", ru: "Мини-тест", en: "Mini test" },
+  { uz: "Exam 80%", ru: "Экзамен 80%", en: "Exam 80%" },
+  { uz: "Keyingi HSK ochiladi", ru: "Открывается следующий HSK", en: "Next HSK unlocks" }
 ];
 
 const tools: CardItem[] = [
-  { icon: RotateCcw, title: { uz: "Aqlli takrorlash", ru: "Умное повторение" }, detail: { uz: "Bugungi so‘zlar", ru: "Слова на сегодня" }, href: "/review" },
-  { icon: Search, title: { uz: "Ieroglif tahlili", ru: "Разбор иероглифа" }, detail: { uz: "Hanzi va pinyin", ru: "Hanzi и pinyin" }, href: "/hanzi-builder" },
-  { icon: Volume2, title: { uz: "Ton mashqi", ru: "Тоны" }, detail: { uz: "Eshitib tanlash", ru: "Слушать и выбрать" }, href: "/tone-trainer" },
-  { icon: Headphones, title: { uz: "Shadowing", ru: "Shadowing" }, detail: { uz: "Eshiting va takrorlang", ru: "Слушайте и повторяйте" }, href: "/shadowing" },
-  { icon: NotebookPen, title: { uz: "Xatolarni tuzatish", ru: "Исправление ошибок" }, detail: { uz: "2 marta to‘g‘ri", ru: "2 верных ответа" }, href: "/mistakes/loop" },
-  { icon: MessageCircle, title: { uz: "Real vaziyat", ru: "Реальная ситуация" }, detail: { uz: "Dialog mashqi", ru: "Практика диалога" }, href: "/roleplay" },
-  { icon: Target, title: { uz: "HSK Sprint", ru: "HSK Sprint" }, detail: { uz: "7 kunlik reja", ru: "План на 7 дней" }, href: "/sprint" },
-  { icon: PenLine, title: { uz: "O‘quv reja", ru: "Учебный план" }, detail: { uz: "Shaxsiy jadval", ru: "Личный график" }, href: "/study-plan" }
+  { icon: RotateCcw, title: { uz: "Aqlli takrorlash", ru: "Умное повторение", en: "Smart Review" }, detail: { uz: "Bugungi so‘zlar", ru: "Слова на сегодня", en: "Today’s words" }, href: "/review" },
+  { icon: Search, title: { uz: "Ieroglif tahlili", ru: "Иероглифы", en: "Hanzi Builder" }, detail: { uz: "Hanzi va pinyin", ru: "Hanzi и pinyin", en: "Hanzi and pinyin" }, href: "/hanzi-builder" },
+  { icon: Volume2, title: { uz: "Ton mashqi", ru: "Тоны", en: "Tones" }, detail: { uz: "Eshitib tanlash", ru: "Слушать и выбрать", en: "Listen and choose" }, href: "/tone-trainer" },
+  { icon: Headphones, title: { uz: "Shadowing", ru: "Shadowing", en: "Shadowing" }, detail: { uz: "Eshiting va takrorlang", ru: "Слушайте и повторяйте", en: "Listen and repeat" }, href: "/shadowing" },
+  { icon: NotebookPen, title: { uz: "Xatolarni tuzatish", ru: "Исправление", en: "Mistake Loop" }, detail: { uz: "2 marta to‘g‘ri", ru: "2 верных ответа", en: "2 correct answers" }, href: "/mistakes/loop" },
+  { icon: MessageCircle, title: { uz: "Real vaziyat", ru: "Ситуации", en: "Roleplay" }, detail: { uz: "Dialog mashqi", ru: "Практика диалога", en: "Dialogue practice" }, href: "/roleplay" },
+  { icon: Target, title: { uz: "HSK Sprint", ru: "HSK Sprint", en: "HSK Sprint" }, detail: { uz: "7 kunlik reja", ru: "План на 7 дней", en: "7-day plan" }, href: "/sprint" },
+  { icon: PenLine, title: { uz: "O‘quv reja", ru: "Учебный план", en: "Study Plan" }, detail: { uz: "Shaxsiy jadval", ru: "Личный график", en: "Personal schedule" }, href: "/study-plan" }
 ];
 
 function SectionHeader({ eyebrow, title, detail, center = false }: { eyebrow: Localized; title: Localized; detail?: Localized; center?: boolean }) {
@@ -143,12 +152,12 @@ function ProductCard({ item }: { item: CardItem }) {
   const { language } = useI18n();
   const Icon = item.icon;
   const content = (
-    <article className="h-full rounded-[1.65rem] border border-orange-soft/70 bg-white/88 p-5 shadow-soft transition hover:-translate-y-1 hover:border-orange-brand/40 hover:shadow-premium">
+    <article className="h-full min-w-0 rounded-[1.65rem] border border-orange-soft/70 bg-white/88 p-5 shadow-soft transition hover:-translate-y-1 hover:border-orange-brand/40 hover:shadow-premium">
       <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-soft text-orange-deep">
         <Icon className="h-6 w-6" />
       </span>
-      <h3 className="mt-5 text-lg font-black leading-tight text-ink">{text(item.title, language)}</h3>
-      <p className="mt-2 text-sm font-semibold leading-6 text-stone-600">{text(item.detail, language)}</p>
+      <h3 className="mt-5 break-words text-lg font-black leading-tight text-ink">{text(item.title, language)}</h3>
+      <p className="mt-2 break-words text-sm font-semibold leading-6 text-stone-600">{text(item.detail, language)}</p>
     </article>
   );
   return item.href ? <Link href={item.href} className="block h-full">{content}</Link> : content;
@@ -157,16 +166,10 @@ function ProductCard({ item }: { item: CardItem }) {
 function HeroAppPreview() {
   const { language } = useI18n();
   const dailyTasks = language === "ru"
-    ? [
-        ["8 слов", "новые слова"],
-        ["1 чтение", "текст"],
-        ["1 speaking", "ответ"]
-      ]
-    : [
-        ["8 so‘z", "yangi so‘z"],
-        ["1 o‘qish", "matn"],
-        ["1 speaking", "javob"]
-      ];
+    ? [["8 слов", "новые слова"], ["1 чтение", "текст"], ["1 speaking", "ответ"]]
+    : language === "en"
+      ? [["8 words", "new words"], ["1 reading", "text"], ["1 speaking", "answer"]]
+      : [["8 so‘z", "yangi so‘z"], ["1 o‘qish", "matn"], ["1 speaking", "javob"]];
 
   return (
     <div className="relative mx-auto w-full max-w-[540px]">
@@ -178,7 +181,7 @@ function HeroAppPreview() {
             <BrandLogo variant="full" size="sm" showText className="min-w-0" />
             <div className="flex shrink-0 items-center gap-2 rounded-full border border-orange-soft bg-white/85 px-3 py-2 text-xs font-black text-orange-deep shadow-soft">
               <Sparkles className="h-4 w-4" />
-              {language === "ru" ? "Демо" : "Demo"}
+              {copy(language, "Demo", "Демо", "Demo")}
             </div>
           </div>
 
@@ -186,9 +189,9 @@ function HeroAppPreview() {
             <div className="rounded-[1.55rem] border border-orange-soft/60 bg-white p-4 shadow-premium">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-[0.68rem] font-black uppercase tracking-normal text-orange-deep">{language === "ru" ? "Текущий урок" : "Joriy dars"}</p>
+                  <p className="text-[0.68rem] font-black uppercase tracking-normal text-orange-deep">{copy(language, "Joriy dars", "Текущий урок", "Current lesson")}</p>
                   <h3 className="mt-1 text-xl font-black leading-tight text-ink">HSK 1 — 1-dars</h3>
-                  <p className="mt-2 text-sm font-semibold leading-5 text-stone-600">{language === "ru" ? "Приветствие и знакомство" : "Salomlashish va tanishish"}</p>
+                  <p className="mt-2 text-sm font-semibold leading-5 text-stone-600">{copy(language, "Salomlashish va tanishish", "Приветствие и знакомство", "Greetings and introductions")}</p>
                 </div>
                 <div className="relative grid h-16 w-16 shrink-0 place-items-center rounded-full bg-orange-soft">
                   <div className="absolute inset-1 rounded-full border-[6px] border-white" />
@@ -197,7 +200,7 @@ function HeroAppPreview() {
               </div>
               <div className="mt-5 grid grid-cols-3 gap-2">
                 {[
-                  [BookOpen, language === "ru" ? "слова" : "so‘z"],
+                  [BookOpen, copy(language, "so‘z", "слова", "words")],
                   [Headphones, "listening"],
                   [Mic, "speaking"]
                 ].map(([Icon, label]) => {
@@ -213,7 +216,7 @@ function HeroAppPreview() {
             </div>
 
             <div className="rounded-[1.55rem] border border-orange-soft/60 bg-white p-4 shadow-soft">
-              <p className="text-xs font-black text-stone-500">{language === "ru" ? "План на сегодня" : "Bugungi reja"}</p>
+              <p className="text-xs font-black text-stone-500">{copy(language, "Bugungi reja", "План на сегодня", "Today’s plan")}</p>
               <div className="mt-3 space-y-2">
                 {dailyTasks.map(([title, detail]) => (
                   <div key={title} className="flex items-center justify-between gap-3 rounded-2xl bg-cream px-3 py-2">
@@ -230,10 +233,10 @@ function HeroAppPreview() {
 
           <div className="mt-3 grid gap-3 sm:grid-cols-[0.82fr_1.18fr]">
             <div className="rounded-[1.45rem] border border-orange-soft/60 bg-white p-4 shadow-soft">
-              <p className="text-xs font-black text-stone-500">{language === "ru" ? "Повторение" : "Takrorlash"}</p>
+              <p className="text-xs font-black text-stone-500">{copy(language, "Takrorlash", "Повторение", "Review")}</p>
               <div className="mt-3 flex items-end gap-2">
                 <span className="text-4xl font-black leading-none text-ink">0</span>
-                <span className="pb-1 text-sm font-black text-stone-500">{language === "ru" ? "слов" : "so‘z"}</span>
+                <span className="pb-1 text-sm font-black text-stone-500">{copy(language, "so‘z", "слов", "words")}</span>
               </div>
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-orange-soft">
                 <div className="h-full w-1/5 rounded-full bg-gradient-to-r from-orange-brand to-orange-hot" />
@@ -246,8 +249,8 @@ function HeroAppPreview() {
                   <Brain className="h-5 w-5" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-black text-ink">{language === "ru" ? "AI-тренер" : "AI murabbiy"}</p>
-                  <p className="mt-1 text-xs font-semibold leading-5 text-stone-600">{language === "ru" ? "15 минут: урок, повторение и speaking." : "15 daqiqa: dars, takrorlash va speaking."}</p>
+                  <p className="text-sm font-black text-ink">{copy(language, "AI murabbiy", "AI-тренер", "AI Coach")}</p>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-stone-600">{copy(language, "15 daqiqa: dars, takrorlash va speaking.", "15 минут: урок, повторение и speaking.", "15 minutes: lesson, review, and speaking.")}</p>
                 </div>
               </div>
             </div>
@@ -282,11 +285,13 @@ function HeroSection() {
       <div>
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-orange-soft bg-white/86 px-4 py-2 text-sm font-black text-orange-deep shadow-soft">
           <Sparkles className="h-4 w-4" />
-          HSK 1–6 + AI yordamchi
+          {copy(language, "HSK 1–6 + AI yordamchi", "HSK 1–6 + AI помощник", "HSK 1–6 + AI Coach")}
         </div>
         <h1 className="max-w-3xl text-balance text-4xl font-black leading-[1.06] text-ink sm:text-6xl lg:text-[4rem]">
           {language === "ru" ? (
             <>Изучайте китайский по HSK <span className="text-orange-brand">проще</span></>
+          ) : language === "en" ? (
+            <>Learn Chinese through HSK <span className="text-orange-brand">more easily</span></>
           ) : (
             <>Xitoy tilini HSK bo‘yicha <span className="text-orange-brand">osonroq</span> o‘rganing</>
           )}
@@ -294,18 +299,20 @@ function HeroSection() {
         <p className="mt-6 max-w-2xl text-base font-semibold leading-7 text-stone-600 sm:text-lg sm:leading-8">
           {language === "ru"
             ? "HanziFlow AI шаг за шагом помогает проходить уроки, умное повторение, speaking, listening и подготовку к экзамену."
-            : "HanziFlow AI sizga darslar, aqlli takrorlash, speaking, listening va imtihon tayyorgarligini bosqichma-bosqich o‘rgatadi."}
+            : language === "en"
+              ? "HanziFlow AI guides you step by step through lessons, Smart Review, speaking, listening, and exam preparation."
+              : "HanziFlow AI sizga darslar, aqlli takrorlash, speaking, listening va imtihon tayyorgarligini bosqichma-bosqich o‘rgatadi."}
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <AppButton href={primaryHref} className="min-h-12 px-6">
-            {user ? (language === "ru" ? "Перейти в кабинет" : "Panelga o‘tish") : language === "ru" ? "Начать бесплатно" : "Bepul boshlash"} <ArrowRight className="h-4 w-4" />
+            {user ? copy(language, "Panelga o‘tish", "Перейти в кабинет", "Open dashboard") : copy(language, "Bepul boshlash", "Начать бесплатно", "Start free")} <ArrowRight className="h-4 w-4" />
           </AppButton>
           <AppButton href="/exam" variant="secondary" className="min-h-12 px-6">
-            {language === "ru" ? "Посмотреть экзамены" : "Imtihon markazini ko‘rish"}
+            {copy(language, "Imtihon markazini ko‘rish", "Посмотреть экзамены", "View exams")}
           </AppButton>
         </div>
         <div className="mt-7 flex flex-wrap gap-2">
-          {["HSK 1–6", language === "ru" ? "AI-тренер" : "AI murabbiy", language === "ru" ? "Умное повторение" : "Aqlli takrorlash", language === "ru" ? "4 навыка" : "4 ko‘nikma"].map((item) => (
+          {["HSK 1–6", copy(language, "AI murabbiy", "AI-тренер", "AI Coach"), copy(language, "Aqlli takrorlash", "Умное повторение", "Smart Review"), copy(language, "4 ko‘nikma", "4 навыка", "4 skills")].map((item) => (
             <span key={item} className="inline-flex items-center gap-2 rounded-full bg-white/82 px-4 py-2 text-xs font-black text-stone-600 shadow-soft">
               <CheckCircle2 className="h-4 w-4 text-orange-brand" /> {item}
             </span>
@@ -321,6 +328,8 @@ function ExamSection() {
   const { language } = useI18n();
   const checks = language === "ru"
     ? ["Listening", "Reading", "Speaking", "Writing", "Правило 80%", "Готовность к экзамену", "Поиск слабых навыков"]
+    : language === "en"
+      ? ["Listening", "Reading", "Speaking", "Writing", "80% rule", "Exam readiness", "Weak skill detection"]
     : ["Listening", "Reading", "Speaking", "Writing", "80% o‘tish bali", "Imtihonga tayyorlik", "Zaif ko‘nikmalarni topish"];
 
   return (
@@ -328,15 +337,16 @@ function ExamSection() {
       <div className="grid gap-7 rounded-[2.5rem] border border-orange-soft/70 bg-white/88 p-6 shadow-premium sm:p-8 lg:grid-cols-[0.95fr_1.05fr] lg:p-10">
         <div>
           <SectionHeader
-            eyebrow={{ uz: "Imtihon", ru: "Экзамен" }}
-            title={{ uz: "HSK imtihoniga tayyorgarlik", ru: "Подготовка к экзамену HSK" }}
+            eyebrow={{ uz: "Imtihon", ru: "Экзамен", en: "Exam" }}
+            title={{ uz: "HSK imtihoniga tayyorgarlik", ru: "Подготовка к экзамену HSK", en: "HSK exam preparation" }}
             detail={{
               uz: "Darslar tugagandan keyin HSK uslubidagi imtihon ochiladi. Keyingi daraja uchun 80% yoki undan yuqori ball kerak.",
-              ru: "После завершения уроков открывается экзамен в стиле HSK. Для следующего уровня нужно 80% или выше."
+              ru: "После завершения уроков открывается экзамен в стиле HSK. Для следующего уровня нужно 80% или выше.",
+              en: "After lessons are completed, an HSK-style exam opens. The next level requires 80% or higher."
             }}
           />
           <AppButton href="/exam" className="min-h-12 px-6">
-            {language === "ru" ? "Посмотреть экзамены" : "Imtihon markazini ko‘rish"} <ArrowRight className="h-4 w-4" />
+            {copy(language, "Imtihon markazini ko‘rish", "Посмотреть экзамены", "View exams")} <ArrowRight className="h-4 w-4" />
           </AppButton>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -358,19 +368,20 @@ function PremiumSection() {
     <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-16">
       <SectionHeader
         center
-        eyebrow={{ uz: "Premium", ru: "Premium" }}
-        title={{ uz: "Ko‘proq AI tekshiruv va chuqurroq mashqlar", ru: "Больше AI-проверок и глубоких упражнений" }}
+        eyebrow={{ uz: "Premium", ru: "Premium", en: "Premium" }}
+        title={{ uz: "Ko‘proq AI tekshiruv va chuqurroq mashqlar", ru: "Больше AI-проверок и глубоких упражнений", en: "More AI checks and deeper practice" }}
         detail={{
           uz: "Bepul boshlang. Tayyor bo‘lganingizda chuqurroq roleplay, analytics va AI tekshiruvlarni oching.",
-          ru: "Начните бесплатно. Когда будете готовы, откройте больше roleplay, analytics и AI-проверок."
+          ru: "Начните бесплатно. Когда будете готовы, откройте больше roleplay, analytics и AI-проверок.",
+          en: "Start free. When you are ready, unlock deeper roleplay, analytics, and AI checks."
         }}
       />
       <div className="grid gap-5 lg:grid-cols-2">
         <article className="rounded-[2rem] border border-orange-soft/70 bg-white/88 p-6 shadow-soft">
-          <p className="text-sm font-black text-stone-500">{language === "ru" ? "Бесплатно" : "Bepul"}</p>
-          <h3 className="mt-2 text-3xl font-black text-ink">{language === "ru" ? "Начало" : "Boshlash"}</h3>
+          <p className="text-sm font-black text-stone-500">{copy(language, "Bepul", "Бесплатно", "Free")}</p>
+          <h3 className="mt-2 text-3xl font-black text-ink">{copy(language, "Boshlash", "Начало", "Starter")}</h3>
           <ul className="mt-5 space-y-3 text-sm font-semibold text-stone-600">
-            {(language === "ru" ? ["Основные уроки", "Ограниченные AI-проверки", "Базовое повторение"] : ["Asosiy darslar", "Cheklangan AI tekshiruvlar", "Asosiy takrorlash"]).map((item) => (
+            {(language === "ru" ? ["Основные уроки", "Ограниченные AI-проверки", "Базовое повторение"] : language === "en" ? ["Core lessons", "Limited AI checks", "Basic review"] : ["Asosiy darslar", "Cheklangan AI tekshiruvlar", "Asosiy takrorlash"]).map((item) => (
               <li key={item} className="flex gap-2"><CheckCircle2 className="h-5 w-5 shrink-0 text-orange-brand" />{item}</li>
             ))}
           </ul>
@@ -379,12 +390,12 @@ function PremiumSection() {
           <p className="text-sm font-black text-orange-deep">Premium</p>
           <h3 className="mt-2 text-3xl font-black text-ink">HanziFlow AI</h3>
           <ul className="mt-5 space-y-3 text-sm font-semibold text-stone-600">
-            {(language === "ru" ? ["Больше AI-проверок", "Продвинутые разговорные сценарии", "Полная аналитика прогресса", "Учебный план", "Готовность к экзамену"] : ["Ko‘proq AI tekshiruvlar", "Kengaytirilgan suhbat mashqlari", "To‘liq rivojlanish tahlili", "O‘quv reja", "Imtihonga tayyorlik"]).map((item) => (
+            {(language === "ru" ? ["Больше AI-проверок", "Продвинутые разговорные сценарии", "Полная аналитика прогресса", "Учебный план", "Готовность к экзамену"] : language === "en" ? ["More AI checks", "Advanced speaking scenarios", "Full progress analytics", "Study plan", "Exam readiness"] : ["Ko‘proq AI tekshiruvlar", "Kengaytirilgan suhbat mashqlari", "To‘liq rivojlanish tahlili", "O‘quv reja", "Imtihonga tayyorlik"]).map((item) => (
               <li key={item} className="flex gap-2"><CheckCircle2 className="h-5 w-5 shrink-0 text-orange-brand" />{item}</li>
             ))}
           </ul>
           <div className="mt-6">
-            <AppButton href="/premium">{language === "ru" ? "Посмотреть Premium" : "Premiumni ko‘rish"}</AppButton>
+            <AppButton href="/premium">{copy(language, "Premiumni ko‘rish", "Посмотреть Premium", "View Premium")}</AppButton>
           </div>
         </article>
       </div>
@@ -403,11 +414,12 @@ export function ClosedBetaLanding() {
       <section id="learn" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-16">
         <SectionHeader
           center
-          eyebrow={{ uz: "Muammo", ru: "Проблема" }}
-          title={{ uz: "Nega xitoy tili qiyin?", ru: "Почему китайский кажется сложным?" }}
+          eyebrow={{ uz: "Muammo", ru: "Проблема", en: "Problem" }}
+          title={{ uz: "Nega xitoy tili qiyin?", ru: "Почему китайский кажется сложным?", en: "Why does Chinese feel difficult?" }}
           detail={{
             uz: "Hanzi, pinyin, ton, gap tartibi va speaking bir-biri bilan bog‘liq. HanziFlow AI shu jarayonni bosqichlarga ajratadi.",
-            ru: "Hanzi, pinyin, тоны, порядок слов и speaking связаны между собой. HanziFlow AI делит этот путь на понятные этапы."
+            ru: "Hanzi, pinyin, тоны, порядок слов и speaking связаны между собой. HanziFlow AI делит этот путь на понятные этапы.",
+            en: "Hanzi, pinyin, tones, word order, and speaking are connected. HanziFlow AI breaks that process into clear steps."
           }}
         />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -418,11 +430,12 @@ export function ClosedBetaLanding() {
       <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-16">
         <SectionHeader
           center
-          eyebrow={{ uz: "Yechim", ru: "Решение" }}
-          title={{ uz: "HanziFlow AI buni qanday osonlashtiradi?", ru: "Как HanziFlow AI упрощает обучение?" }}
+          eyebrow={{ uz: "Yechim", ru: "Решение", en: "Solution" }}
+          title={{ uz: "HanziFlow AI buni qanday osonlashtiradi?", ru: "Как HanziFlow AI упрощает обучение?", en: "How does HanziFlow AI make it easier?" }}
           detail={{
             uz: "Har bir vosita xitoy tilidagi aniq qiyinchilikni hal qiladi: eslab qolish, eshitish, gap tuzish va imtihonga tayyorgarlik.",
-            ru: "Каждый инструмент решает конкретную трудность: запоминание, слух, порядок слов и подготовку к экзамену."
+            ru: "Каждый инструмент решает конкретную трудность: запоминание, слух, порядок слов и подготовку к экзамену.",
+            en: "Each tool targets a real Chinese-learning challenge: memory, listening, word order, and exam preparation."
           }}
         />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -433,18 +446,19 @@ export function ClosedBetaLanding() {
       <section id="lessons" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-16">
         <div className="rounded-[2.5rem] border border-orange-soft/70 bg-white/86 p-6 shadow-premium sm:p-8 lg:p-10">
           <SectionHeader
-            eyebrow={{ uz: "O‘quv yo‘li", ru: "Учебный путь" }}
-            title={{ uz: "Bosqichma-bosqich o‘quv yo‘li", ru: "Пошаговый путь обучения" }}
+            eyebrow={{ uz: "O‘quv yo‘li", ru: "Учебный путь", en: "Learning Path" }}
+            title={{ uz: "Bosqichma-bosqich o‘quv yo‘li", ru: "Пошаговый путь обучения", en: "Step-by-step learning path" }}
             detail={{
               uz: "Darslar ketma-ket ochiladi. Barcha bo‘limlar tugagandan keyin imtihon ochiladi.",
-              ru: "Уроки открываются по порядку. После завершения всех разделов открывается экзамен."
+              ru: "Уроки открываются по порядку. После завершения всех разделов открывается экзамен.",
+              en: "Lessons unlock in order. After every section is complete, the exam opens."
             }}
           />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {flow.map((step, index) => (
               <div key={step.uz} className="rounded-[1.45rem] border border-orange-soft/70 bg-cream/80 p-4 shadow-soft">
                 <div className="grid h-10 w-10 place-items-center rounded-2xl bg-orange-brand text-sm font-black text-white">{index + 1}</div>
-                <p className="mt-3 text-sm font-black leading-5 text-ink">{language === "ru" ? step.ru : step.uz}</p>
+                <p className="mt-3 text-sm font-black leading-5 text-ink">{text(step, language)}</p>
               </div>
             ))}
           </div>
@@ -456,11 +470,12 @@ export function ClosedBetaLanding() {
       <section id="practice" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-16">
         <SectionHeader
           center
-          eyebrow={{ uz: "Mashq", ru: "Практика" }}
-          title={{ uz: "Har kuni mashq qilish uchun vositalar", ru: "Инструменты для ежедневной практики" }}
+          eyebrow={{ uz: "Mashq", ru: "Практика", en: "Practice" }}
+          title={{ uz: "Har kuni mashq qilish uchun vositalar", ru: "Инструменты для ежедневной практики", en: "Tools for daily practice" }}
           detail={{
             uz: "Kundalik qisqa mashqlar xotira, tinglash va gapirish ishonchini oshiradi.",
-            ru: "Короткая ежедневная практика укрепляет память, слух и уверенность в речи."
+            ru: "Короткая ежедневная практика укрепляет память, слух и уверенность в речи.",
+            en: "Short daily practice improves memory, listening, and speaking confidence."
           }}
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -472,20 +487,23 @@ export function ClosedBetaLanding() {
         <div className="grid gap-7 rounded-[2.5rem] border border-orange-soft/70 bg-gradient-to-br from-white via-cream to-orange-soft/50 p-6 shadow-premium sm:p-8 lg:grid-cols-[0.9fr_1.1fr] lg:p-10">
           <div>
             <SectionHeader
-              eyebrow={{ uz: "AI murabbiy", ru: "AI-тренер" }}
-              title={{ uz: "AI murabbiy siz bilan birga o‘rganadi", ru: "AI-тренер учится вместе с вами" }}
+              eyebrow={{ uz: "AI murabbiy", ru: "AI-тренер", en: "AI Coach" }}
+              title={{ uz: "AI murabbiy siz bilan birga o‘rganadi", ru: "AI-тренер учится вместе с вами", en: "The AI Coach learns with you" }}
               detail={{
                 uz: "AI darslaringiz, zaif so‘zlaringiz va imtihon natijalaringizga qarab amaliy tavsiya beradi.",
-                ru: "AI даёт практичные советы по вашим урокам, слабым словам и результатам экзаменов."
+                ru: "AI даёт практичные советы по вашим урокам, слабым словам и результатам экзаменов.",
+                en: "AI gives practical recommendations based on your lessons, weak words, and exam results."
               }}
             />
             <AppButton href="/ai-tutor" className="min-h-12 px-6">
-              {language === "ru" ? "Открыть AI-тренера" : "AI murabbiyni ochish"} <ArrowRight className="h-4 w-4" />
+              {copy(language, "AI murabbiyni ochish", "Открыть AI-тренера", "Open AI Coach")} <ArrowRight className="h-4 w-4" />
             </AppButton>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {(language === "ru"
               ? ["Личные рекомендации", "Speaking evaluation", "Writing feedback", "Разбор ошибок", "Учебный план", "Поиск слабых навыков"]
+              : language === "en"
+                ? ["Personal recommendations", "Speaking evaluation", "Writing feedback", "Mistake analysis", "Study plan", "Weak skill detection"]
               : ["Shaxsiy tavsiyalar", "Speaking evaluation", "Writing feedback", "Xatolarni tushuntirish", "O‘quv reja", "Zaif ko‘nikmalarni topish"]
             ).map((item) => (
               <div key={item} className="rounded-[1.35rem] border border-orange-soft/70 bg-white/85 p-4 text-sm font-black text-ink shadow-soft">
@@ -502,15 +520,17 @@ export function ClosedBetaLanding() {
       <section className="mx-auto max-w-5xl px-5 pb-16 pt-8 text-center sm:px-8 lg:pb-24">
         <div className="rounded-[2.5rem] border border-orange-soft/70 bg-gradient-to-br from-white via-cream to-orange-soft/60 p-7 shadow-premium sm:p-10">
           <GraduationCap className="mx-auto h-12 w-12 text-orange-brand" />
-          <h2 className="mt-4 text-3xl font-black text-ink sm:text-5xl">{language === "ru" ? "Начните с HSK 1 сегодня" : "Bugun HSK 1-dan boshlang"}</h2>
+          <h2 className="mt-4 text-3xl font-black text-ink sm:text-5xl">{copy(language, "Bugun HSK 1-dan boshlang", "Начните с HSK 1 сегодня", "Start HSK 1 today")}</h2>
           <p className="mx-auto mt-3 max-w-2xl text-base font-semibold leading-7 text-stone-600">
             {language === "ru"
               ? "Учитесь понемногу каждый день, исправляйте ошибки и готовьтесь к экзамену."
-              : "Har kuni oz-ozdan o‘rganing, xatolaringizni tuzating va imtihonga tayyorlaning."}
+              : language === "en"
+                ? "Study a little every day, fix mistakes, and prepare for the exam."
+                : "Har kuni oz-ozdan o‘rganing, xatolaringizni tuzating va imtihonga tayyorlaning."}
           </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <AppButton href={user ? "/dashboard" : "/register"}>{user ? (language === "ru" ? "Перейти в кабинет" : "Panelga o‘tish") : language === "ru" ? "Начать бесплатно" : "Bepul boshlash"} <ArrowRight className="h-4 w-4" /></AppButton>
-            <AppButton href="/login" variant="secondary">{language === "ru" ? "Войти" : "Kirish"}</AppButton>
+            <AppButton href={user ? "/dashboard" : "/register"}>{user ? copy(language, "Panelga o‘tish", "Перейти в кабинет", "Open dashboard") : copy(language, "Bepul boshlash", "Начать бесплатно", "Start free")} <ArrowRight className="h-4 w-4" /></AppButton>
+            <AppButton href="/login" variant="secondary">{copy(language, "Kirish", "Войти", "Sign in")}</AppButton>
           </div>
         </div>
       </section>
@@ -520,7 +540,7 @@ export function ClosedBetaLanding() {
           <div>
             <BrandLogo variant="full" size="sm" />
             <p className="mt-3 max-w-lg text-sm font-semibold leading-6 text-stone-600">
-              {language === "ru" ? "Платформа для изучения китайского и подготовки к HSK." : "Xitoy tili va HSK tayyorgarlik platformasi."}
+              {copy(language, "Xitoy tili va HSK tayyorgarlik platformasi.", "Платформа для изучения китайского и подготовки к HSK.", "Chinese learning and HSK preparation platform.")}
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm font-black text-stone-600">

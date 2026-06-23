@@ -1,11 +1,14 @@
 import uz from "../locales/uz.json";
 import ru from "../locales/ru.json";
+import en from "../locales/en.json";
 
 type Dictionary = Record<string, string>;
+type Locale = "uz" | "ru" | "en";
 
-const dictionaries: Array<{ locale: "uz" | "ru"; values: Dictionary }> = [
+const dictionaries: Array<{ locale: Locale; values: Dictionary }> = [
   { locale: "uz", values: uz as Dictionary },
-  { locale: "ru", values: ru as Dictionary }
+  { locale: "ru", values: ru as Dictionary },
+  { locale: "en", values: en as Dictionary }
 ];
 
 const allowedLatinWords = new Set([
@@ -45,7 +48,7 @@ for (const { locale, values } of dictionaries) {
       continue;
     }
     const normalized = stripAllowedWords(value);
-    if (englishUiWords.test(normalized)) {
+    if (locale !== "en" && englishUiWords.test(normalized)) {
       errors.push(`${locale}.${key}: inglizcha UI so‘z topildi -> ${value}`);
     }
     if (locale === "uz" && /[а-яё]/i.test(value)) {
@@ -55,13 +58,14 @@ for (const { locale, values } of dictionaries) {
 }
 
 const uzKeys = new Set(Object.keys(uz));
-const ruKeys = new Set(Object.keys(ru));
-
-for (const key of uzKeys) {
-  if (!ruKeys.has(key)) errors.push(`ru.${key}: kalit yetishmaydi`);
-}
-for (const key of ruKeys) {
-  if (!uzKeys.has(key)) errors.push(`uz.${key}: kalit yetishmaydi`);
+for (const { locale, values } of dictionaries) {
+  const keys = new Set(Object.keys(values));
+  for (const key of uzKeys) {
+    if (!keys.has(key)) errors.push(`${locale}.${key}: kalit yetishmaydi`);
+  }
+  for (const key of keys) {
+    if (!uzKeys.has(key)) errors.push(`uz.${key}: kalit yetishmaydi`);
+  }
 }
 
 if (errors.length) {

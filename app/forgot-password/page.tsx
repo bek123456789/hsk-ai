@@ -7,10 +7,11 @@ export default function ForgotPasswordPage() {
   return (
     <AuthShell
       mode="forgot"
-      title={{ uz: "Parolni tiklash", ru: "Восстановление пароля" }}
+      title={{ uz: "Parolni tiklash", ru: "Восстановление пароля", en: "Reset password" }}
       subtitle={{
         uz: "Emailingizni kiriting, tiklash havolasini yuboramiz.",
-        ru: "Введите email, и мы отправим ссылку для восстановления."
+        ru: "Введите email, и мы отправим ссылку для восстановления.",
+        en: "Enter your email and we will send a reset link."
       }}
       footer={
         {
@@ -24,6 +25,12 @@ export default function ForgotPasswordPage() {
             <>
               Вспомнили пароль?{" "}
               <Link href="/login" className="font-black text-orange-brand">Вернуться ко входу</Link>
+            </>
+          ),
+          en: (
+            <>
+              Remembered your password?{" "}
+              <Link href="/login" className="font-black text-orange-brand">Back to sign in</Link>
             </>
           )
         }

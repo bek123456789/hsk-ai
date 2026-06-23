@@ -44,6 +44,8 @@ const skillIcons = { listening: Headphones, reading: BookOpen, speaking: Mic, wr
 function optionText(option: HSKContentOption, language: AppLanguage) {
   return language === "ru"
     ? option.textRu ?? option.textZh ?? option.textPinyin ?? ""
+    : language === "en"
+      ? option.textUz ?? option.textRu ?? option.textZh ?? option.textPinyin ?? ""
     : option.textUz ?? option.textZh ?? option.textPinyin ?? "";
 }
 
@@ -83,7 +85,8 @@ function buildItems(level: HSKLevel): ExamItem[] {
 function sectionTitle(skill: ExamSkill, language: AppLanguage) {
   const labels = {
     uz: { listening: "Listening bo‘limi", reading: "O‘qish bo‘limi", speaking: "Speaking bo‘limi", writing: "Writing bo‘limi" },
-    ru: { listening: "Раздел аудирования", reading: "Раздел чтения", speaking: "Раздел говорения", writing: "Раздел письма" }
+    ru: { listening: "Раздел аудирования", reading: "Раздел чтения", speaking: "Раздел говорения", writing: "Раздел письма" },
+    en: { listening: "Listening section", reading: "Reading section", speaking: "Speaking section", writing: "Writing section" }
   };
   return labels[language][skill];
 }

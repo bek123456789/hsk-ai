@@ -44,6 +44,7 @@ import { getReviewQueue } from "@/utils/spacedReview";
 type LocalizedText = {
   uz: string;
   ru: string;
+  en: string;
 };
 
 type QuickAction = LocalizedText & {
@@ -57,19 +58,32 @@ type DailyTask = LocalizedText & {
   href: string;
   detailUz: string;
   detailRu: string;
+  detailEn: string;
   icon: LucideIcon;
 };
 
 const quickActions: QuickAction[] = [
-  { href: "/learning-path", uz: "O‘quv yo‘li", ru: "Учебный путь", icon: Map, tone: "bg-orange-50 text-orange-700" },
-  { href: "/review", uz: "Aqlli takrorlash", ru: "Умное повторение", icon: RotateCcw, tone: "bg-skysoft text-sky-700" },
-  { href: "/tone-trainer", uz: "Ton mashqi", ru: "Тоны", icon: Headphones, tone: "bg-violet-50 text-violet-700" },
-  { href: "/hanzi-builder", uz: "Hanzi Builder", ru: "Hanzi Builder", icon: NotebookTabs, tone: "bg-orange-soft text-orange-deep" },
-  { href: "/sentence-builder", uz: "Gap tuzish", ru: "Предложения", icon: Brain, tone: "bg-emerald-50 text-emerald-700" },
-  { href: "/roleplay", uz: "Real vaziyat", ru: "Ситуации", icon: Mic, tone: "bg-rose-50 text-rose-700" },
-  { href: "/sprint", uz: "HSK Sprint", ru: "HSK Sprint", icon: Flame, tone: "bg-amber-100 text-amber-700" },
-  { href: "/exam", uz: "Tayyorlik", ru: "Готовность", icon: Trophy, tone: "bg-orange-50 text-orange-700" }
+  { href: "/learning-path", uz: "O‘quv yo‘li", ru: "Учебный путь", en: "Learning Path", icon: Map, tone: "bg-orange-50 text-orange-700" },
+  { href: "/review", uz: "Aqlli takrorlash", ru: "Умное повторение", en: "Smart Review", icon: RotateCcw, tone: "bg-skysoft text-sky-700" },
+  { href: "/tone-trainer", uz: "Tonlar", ru: "Тоны", en: "Tones", icon: Headphones, tone: "bg-violet-50 text-violet-700" },
+  { href: "/hanzi-builder", uz: "Hanzi Builder", ru: "Hanzi Builder", en: "Hanzi Builder", icon: NotebookTabs, tone: "bg-orange-soft text-orange-deep" },
+  { href: "/sentence-builder", uz: "Gaplar", ru: "Предложения", en: "Sentences", icon: Brain, tone: "bg-emerald-50 text-emerald-700" },
+  { href: "/roleplay", uz: "Vaziyatlar", ru: "Ситуации", en: "Roleplay", icon: Mic, tone: "bg-rose-50 text-rose-700" },
+  { href: "/sprint", uz: "HSK Sprint", ru: "HSK Sprint", en: "HSK Sprint", icon: Flame, tone: "bg-amber-100 text-amber-700" },
+  { href: "/exam", uz: "Tayyorlik", ru: "Готовность", en: "Readiness", icon: Trophy, tone: "bg-orange-50 text-orange-700" }
 ];
+
+function localizedText(item: LocalizedText, language: AppLanguage) {
+  if (language === "ru") return item.ru;
+  if (language === "en") return item.en;
+  return item.uz;
+}
+
+function localizedDetail(item: DailyTask, language: AppLanguage) {
+  if (language === "ru") return item.detailRu;
+  if (language === "en") return item.detailEn;
+  return item.detailUz;
+}
 
 function getLocalDateKey() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashkent" }).format(new Date());
@@ -89,12 +103,12 @@ function QuickActionCard({ action, language, level }: { action: QuickAction; lan
   return (
     <Link
       href={href}
-      className="warm-focus group flex min-h-[92px] items-center gap-3 rounded-[1.4rem] border border-stone-200/70 bg-white/90 p-3.5 shadow-soft transition duration-200 hover:-translate-y-0.5 hover:border-orange-soft hover:shadow-card"
+      className="warm-focus group flex min-h-[96px] min-w-0 items-center gap-3 rounded-[1.4rem] border border-stone-200/70 bg-white/90 p-3.5 shadow-soft transition duration-200 hover:-translate-y-0.5 hover:border-orange-soft hover:shadow-card"
     >
       <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${action.tone}`}>
         <Icon className="h-5 w-5" />
       </span>
-      <span className="min-w-0 flex-1 text-sm font-black leading-5 text-ink">{language === "ru" ? action.ru : action.uz}</span>
+      <span className="min-w-0 flex-1 whitespace-normal break-words text-sm font-black leading-5 text-ink">{localizedText(action, language)}</span>
       <ChevronRight className="h-4 w-4 shrink-0 text-stone-300 transition group-hover:translate-x-0.5 group-hover:text-orange-brand" />
     </Link>
   );
@@ -112,8 +126,8 @@ function DailyTaskRow({ task, language, done }: { task: DailyTask; language: App
         {done ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-black leading-5 text-ink">{language === "ru" ? task.ru : task.uz}</span>
-        <span className="mt-0.5 block text-xs font-bold text-stone-500">{language === "ru" ? task.detailRu : task.detailUz}</span>
+        <span className="block break-words text-sm font-black leading-5 text-ink">{localizedText(task, language)}</span>
+        <span className="mt-0.5 block break-words text-xs font-bold text-stone-500">{localizedDetail(task, language)}</span>
       </span>
       <ChevronRight className="h-4 w-4 shrink-0 text-stone-300 transition group-hover:translate-x-0.5 group-hover:text-orange-brand" />
     </Link>
@@ -203,8 +217,10 @@ export default function DashboardPage() {
       href: nextLessonHref,
       uz: `${Math.min(8, nextLessonWords || nextLesson?.vocabularyIds.length || 0)} ta yangi so‘z`,
       ru: `${Math.min(8, nextLessonWords || nextLesson?.vocabularyIds.length || 0)} новых слов`,
+      en: `${Math.min(8, nextLessonWords || nextLesson?.vocabularyIds.length || 0)} new words`,
       detailUz: "Keyingi darsdan • 6 daqiqa",
       detailRu: "Из следующего урока • 6 минут",
+      detailEn: "From the next lesson • 6 minutes",
       icon: BookOpen
     },
     {
@@ -212,8 +228,10 @@ export default function DashboardPage() {
       href: "/review",
       uz: `Bugun ${reviewDueCount} ta so‘z`,
       ru: `Сегодня ${reviewDueCount} слов`,
+      en: `${reviewDueCount} words today`,
       detailUz: "Aqlli takrorlash • 5 daqiqa",
       detailRu: "Умное повторение • 5 минут",
+      detailEn: "Smart Review • 5 minutes",
       icon: RotateCcw
     },
     {
@@ -221,8 +239,10 @@ export default function DashboardPage() {
       href: `/reading/${currentLevel}`,
       uz: "1 ta o‘qish mashqi",
       ru: "1 задание по чтению",
+      en: "1 reading task",
       detailUz: "Matn va savollar • 4 daqiqa",
       detailRu: "Текст и вопросы • 4 минуты",
+      detailEn: "Text and questions • 4 minutes",
       icon: BookOpen
     },
     {
@@ -230,8 +250,10 @@ export default function DashboardPage() {
       href: `/listening/${currentLevel}`,
       uz: "1 ta tinglash mashqi",
       ru: "1 задание по аудированию",
+      en: "1 listening task",
       detailUz: "Eshiting va javob bering • 3 daqiqa",
       detailRu: "Прослушайте и ответьте • 3 минуты",
+      detailEn: "Listen and answer • 3 minutes",
       icon: Headphones
     },
     {
@@ -239,8 +261,10 @@ export default function DashboardPage() {
       href: `/speaking/${currentLevel}`,
       uz: "1 ta gapirish vazifasi",
       ru: "1 задание по говорению",
+      en: "1 speaking task",
       detailUz: "Xitoycha javob bering • 3 daqiqa",
       detailRu: "Ответьте по-китайски • 3 минуты",
+      detailEn: "Answer in Chinese • 3 minutes",
       icon: Mic
     },
     {
@@ -248,8 +272,10 @@ export default function DashboardPage() {
       href: `/quiz/${currentLevel}`,
       uz: "Qisqa test",
       ru: "Короткий тест",
+      en: "Short quiz",
       detailUz: "Bilimingizni tekshiring • 4 daqiqa",
       detailRu: "Проверьте знания • 4 минуты",
+      detailEn: "Check your knowledge • 4 minutes",
       icon: Target
     },
     {
@@ -257,8 +283,10 @@ export default function DashboardPage() {
       href: "/ai-tutor",
       uz: "AI murabbiydan maslahat",
       ru: "Совет AI-тренера",
+      en: "AI Coach advice",
       detailUz: "Bugungi rejangizni so‘rang • 2 daqiqa",
       detailRu: "Спросите план на сегодня • 2 минуты",
+      detailEn: "Ask for today’s plan • 2 minutes",
       icon: Bot
     }
   ];

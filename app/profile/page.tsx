@@ -322,6 +322,7 @@ export default function ProfilePage() {
                   <select value={profileLanguage} onChange={(event) => setProfileLanguage(event.target.value as AppLanguage)} className="warm-focus min-h-12 w-full rounded-2xl border border-orange-soft bg-cream px-4 font-bold text-ink outline-none">
                     <option value="uz">O‘zbekcha</option>
                     <option value="ru">Русский</option>
+                    <option value="en">English</option>
                   </select>
                 </label>
               </div>

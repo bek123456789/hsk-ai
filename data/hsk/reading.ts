@@ -14,7 +14,12 @@ const readingTopics = [
     uz: (a: string, b: string) => `Anna talaba. U har kuni xitoy tilini o‘rganadi. Bugun o‘qituvchi ularga “${a}” va “${b}” so‘zlarini o‘rgatdi. Anna xitoy tilini qiziqarli deb hisoblaydi.`,
     ru: (a: string, b: string) => `Анна студентка. Она каждый день изучает китайский. Сегодня учитель объяснил слова «${a}» и «${b}». Анна считает китайский интересным.`,
     answerUz: "Anna xitoy tilini o‘rganadi",
-    answerRu: "Анна изучает китайский"
+    answerRu: "Анна изучает китайский",
+    distractors: [
+      ["Anna restoran ochadi", "Анна открывает ресторан"],
+      ["Anna taksida aeroportga boradi", "Анна едет на такси в аэропорт"],
+      ["Anna futbol mashq qiladi", "Анна тренируется играть в футбол"]
+    ]
   },
   {
     tag: "family",
@@ -26,7 +31,12 @@ const readingTopics = [
     uz: (a: string, b: string) => `Dam olish kuni men uyda bo‘ldim. Onam bilan kitob o‘qidim, otam do‘konga meva olishga bordi. Kechqurun choy ichdik va “${a}”, “${b}” so‘zlarini takrorladik.`,
     ru: (a: string, b: string) => `В выходные я был дома. С мамой читал книгу, папа пошёл в магазин за фруктами. Вечером мы пили чай и повторяли слова «${a}» и «${b}».`,
     answerUz: "oilasi bilan uyda bo‘ladi",
-    answerRu: "проводит время дома с семьёй"
+    answerRu: "проводит время дома с семьёй",
+    distractors: [
+      ["oilasi bilan restoranga boradi", "идёт с семьёй в ресторан"],
+      ["do‘sti bilan sport qiladi", "занимается спортом с другом"],
+      ["o‘qituvchiga telefon qiladi", "звонит учителю"]
+    ]
   },
   {
     tag: "school",
@@ -38,7 +48,12 @@ const readingTopics = [
     uz: (a: string, b: string) => `Bugun xitoy tili darsi bo‘ldi. O‘qituvchi avval matn o‘qitdi, keyin savol berdi. Darsdan keyin men “${a}” so‘zini daftarimga yozdim va “${b}” bilan bitta gap tuzdim.`,
     ru: (a: string, b: string) => `Сегодня был урок китайского. Сначала учитель попросил прочитать текст, потом задал вопросы. После урока я записал слово «${a}» и составил предложение со словом «${b}».`,
     answerUz: "matn o‘qiydi va gap tuzadi",
-    answerRu: "читает текст и составляет предложение"
+    answerRu: "читает текст и составляет предложение",
+    distractors: [
+      ["darsdan oldin uxlaydi", "спит перед уроком"],
+      ["faqat choy ichadi", "только пьёт чай"],
+      ["kitobni do‘konda sotadi", "продаёт книгу в магазине"]
+    ]
   },
   {
     tag: "shopping",
@@ -50,7 +65,12 @@ const readingTopics = [
     uz: (a: string, b: string) => `Syao Li do‘konga xarid qilishga bordi. U bitta kitob va bir shisha suv olmoqchi. Sotuvchi bugun chegirma borligini aytdi. Syao Li to‘lov qilayotib “${a}” va “${b}” talaffuzini mashq qildi.`,
     ru: (a: string, b: string) => `Сяо Ли пошёл в магазин. Он хочет купить книгу и бутылку воды. Продавец сказал, что сегодня есть скидка. Во время оплаты Сяо Ли тренировался произносить «${a}» и «${b}».`,
     answerUz: "kitob va suv sotib oladi",
-    answerRu: "покупает книгу и воду"
+    answerRu: "покупает книгу и воду",
+    distractors: [
+      ["kino ko‘rishga boradi", "идёт смотреть фильм"],
+      ["maktabda imtihon topshiradi", "сдаёт экзамен в школе"],
+      ["uyda xat yozadi", "пишет письмо дома"]
+    ]
   },
   {
     tag: "travel",
@@ -62,7 +82,12 @@ const readingTopics = [
     uz: (a: string, b: string) => `Bu oy men Xitoyga sayohat qilishni rejalashtiryapman. Avval avtobusda aeroportga boraman, keyin samolyotga chiqaman. Do‘stim pasport olishni eslatdi va “${a}”, “${b}” so‘zlarini takrorlashni maslahat berdi.`,
     ru: (a: string, b: string) => `В этом месяце я планирую поездку в Китай. Сначала поеду на автобусе в аэропорт, потом полечу самолётом. Друг напомнил взять паспорт и повторить слова «${a}» и «${b}».`,
     answerUz: "Xitoyga sayohat qiladi",
-    answerRu: "едет в Китай"
+    answerRu: "едет в Китай",
+    distractors: [
+      ["kompyuter sotib oladi", "покупает компьютер"],
+      ["oilasiga ovqat tayyorlaydi", "готовит еду семье"],
+      ["darsni bekor qiladi", "отменяет урок"]
+    ]
   },
   {
     tag: "work",
@@ -74,7 +99,12 @@ const readingTopics = [
     uz: (a: string, b: string) => `Menejer ertalab majlis o‘tkazib, bu haftadagi asosiy ishlarni tushuntirdi. Hamma samaradorlikni oshirishi va hisobotni vaqtida tugatishi kerak. Men ma’lumotlarni tartiblayman va “${a}”, “${b}” so‘zlarini o‘quv daftarimga yozaman.`,
     ru: (a: string, b: string) => `Утром менеджер провёл совещание и объяснил главные задачи недели. Всем нужно повысить эффективность и вовремя закончить отчёт. Я отвечаю за материалы и записываю «${a}», «${b}» в учебные заметки.`,
     answerUz: "ish rejasini tushuntiradi",
-    answerRu: "объясняет рабочий план"
+    answerRu: "объясняет рабочий план",
+    distractors: [
+      ["sayohat uchun chipta oladi", "покупает билет для поездки"],
+      ["kasalxonaga boradi", "идёт в больницу"],
+      ["yangi telefon tanlaydi", "выбирает новый телефон"]
+    ]
   },
   {
     tag: "culture",
@@ -86,7 +116,12 @@ const readingTopics = [
     uz: (a: string, b: string) => `Bugungi madaniyat darsida bayramlar va odatlar muhokama qilindi. O‘qituvchi til o‘rganishda faqat so‘z yodlash yetarli emas, jamiyat va madaniyatni ham tushunish kerak dedi. Darsdan keyin “${a}” va “${b}” bilan ikki gap yozdik.`,
     ru: (a: string, b: string) => `На уроке культуры обсуждали праздники и привычки. Учитель сказал, что при изучении языка важно понимать общество и культуру, а не только учить слова. После урока мы написали два предложения со словами «${a}» и «${b}».`,
     answerUz: "til va madaniyat bog‘liqligini o‘rganadi",
-    answerRu: "изучает связь языка и культуры"
+    answerRu: "изучает связь языка и культуры",
+    distractors: [
+      ["faqat sonlarni sanaydi", "только считает числа"],
+      ["poyezd jadvalini tekshiradi", "проверяет расписание поезда"],
+      ["meva narxini so‘raydi", "спрашивает цену фруктов"]
+    ]
   },
   {
     tag: "opinion",
@@ -98,7 +133,12 @@ const readingTopics = [
     uz: (a: string, b: string) => `Ba’zilar onlayn o‘qish qulayroq, boshqalar yuzma-yuz muloqot samaraliroq deb hisoblaydi. Mening fikrimcha, ikkala usulning ham qadri bor. Muhimi, muntazam takrorlash va “${a}”, “${b}” kabi so‘zlarni haqiqiy gaplarda ishlatish.`,
     ru: (a: string, b: string) => `Кто-то считает онлайн-обучение удобнее, а кто-то думает, что личное общение эффективнее. По моему мнению, оба способа ценны. Главное — регулярно повторять и использовать слова вроде «${a}», «${b}» в настоящих предложениях.`,
     answerUz: "ikkala o‘qish usuli foydali",
-    answerRu: "оба способа обучения полезны"
+    answerRu: "оба способа обучения полезны",
+    distractors: [
+      ["faqat yuzma-yuz o‘qish zararli", "только очное обучение вредно"],
+      ["onlayn o‘qish doim bekor qilinadi", "онлайн-обучение всегда отменяют"],
+      ["takrorlash kerak emas", "повторять не нужно"]
+    ]
   },
   {
     tag: "advanced",
@@ -110,7 +150,12 @@ const readingTopics = [
     uz: (a: string, b: string) => `Samarali til o‘rganish faqat so‘z ma’nosini yodlash emas, balki ifodani kontekstda tushunishdir. O‘quvchi tinglash, gapirish, o‘qish va yozishni birlashtirsa, barqaror til sezgisi shakllanadi. Shuning uchun “${a}” va “${b}” faqat ro‘yxatda qolmasdan, haqiqiy muloqotga kirishi kerak.`,
     ru: (a: string, b: string) => `Эффективное изучение языка — это не только запоминание значения слов, но и понимание выражений в контексте. Если учащийся объединяет аудирование, говорение, чтение и письмо, постепенно формируется устойчивое языковое чувство. Поэтому «${a}» и «${b}» должны перейти из списка слов в реальное общение.`,
     answerUz: "so‘zlarni kontekstda ishlatish kerak",
-    answerRu: "слова нужно использовать в контексте"
+    answerRu: "слова нужно использовать в контексте",
+    distractors: [
+      ["faqat ro‘yxat yodlash yetarli", "достаточно только заучивать список"],
+      ["gapirish va tinglash kerak emas", "говорение и аудирование не нужны"],
+      ["so‘zlarni haqiqiy gapda ishlatmaslik kerak", "не нужно использовать слова в настоящих предложениях"]
+    ]
   }
 ];
 
@@ -149,8 +194,9 @@ const foundationalReadingContent: HSKReadingPassage[] = levels.flatMap((level) =
           questionRu: "Выберите главную мысль текста.",
           correctUz: topic.answerUz,
           correctRu: topic.answerRu,
-          explanationUz: "To‘g‘ri javob matndagi asosiy harakat yoki fikrga mos keladi.",
-          explanationRu: "Правильный ответ соответствует главному действию или мысли текста."
+          explanationUz: `Matnda asosiy fikr “${topic.answerUz}” ekanini bildiruvchi gaplar bor. Boshqa variantlar matndagi asosiy mazmunga mos emas.`,
+          explanationRu: `В тексте есть фразы, которые показывают главную мысль: «${topic.answerRu}». Другие варианты не соответствуют основному смыслу текста.`,
+          distractors: topic.distractors.map(([uz, ru]) => ({ uz, ru }))
         })
       ],
       difficulty: difficultyForLevel(level),

@@ -72,7 +72,7 @@ export type AuthUser = {
   referralBonusDays?: number;
 };
 
-export type AppLanguage = "uz" | "ru";
+export type AppLanguage = "uz" | "ru" | "en";
 
 export type SubscriptionStatus = "free" | "active" | "trialing" | "past_due" | "canceled" | "unpaid" | "beta_premium";
 

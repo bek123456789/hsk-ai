@@ -16,7 +16,7 @@ type Body = {
 };
 
 function toLanguage(value: unknown): AppLanguage {
-  return value === "ru" ? "ru" : "uz";
+  return value === "ru" || value === "en" ? value : "uz";
 }
 
 function getBearerToken(request: Request) {

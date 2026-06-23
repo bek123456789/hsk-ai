@@ -39,6 +39,13 @@ function errorMessage(key: ErrorKey, language: AppLanguage) {
       config: "Настройки Stripe заполнены не полностью",
       profile: "Ошибка получения профиля",
       session: "Не удалось создать платёжную сессию. Попробуйте ещё раз"
+    },
+    en: {
+      auth: "Sign in first",
+      plan: "Premium plan was not found",
+      config: "Stripe settings are incomplete",
+      profile: "Could not load profile data",
+      session: "Could not create a checkout session. Try again"
     }
   };
 
@@ -67,7 +74,7 @@ export async function POST(request: Request) {
     body = {};
   }
 
-  const language: AppLanguage = body.language === "ru" ? "ru" : "uz";
+  const language: AppLanguage = body.language === "ru" || body.language === "en" ? body.language : "uz";
 
   if (!isPlan(body.plan)) {
     return errorResponse(errorMessage("plan", language), "missing_price_id", 400);

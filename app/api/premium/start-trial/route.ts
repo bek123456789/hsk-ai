@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   let language: AppLanguage = "uz";
   try {
     const body = (await request.json()) as { language?: unknown };
-    language = body.language === "ru" ? "ru" : "uz";
+    language = body.language === "ru" || body.language === "en" ? body.language : "uz";
   } catch {
     language = "uz";
   }

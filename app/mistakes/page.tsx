@@ -5,12 +5,12 @@ import { useMemo, useState } from "react";
 import { AppButton } from "@/components/AppButton";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useProgressStore } from "@/store/progressStore";
-import type { HSKLevel, MistakeRecord, MistakeSource } from "@/types";
+import type { AppLanguage, HSKLevel, MistakeRecord, MistakeSource } from "@/types";
 import { useI18n } from "@/utils/i18n";
 
 const sourceFilters: Array<"all" | MistakeSource> = ["all", "quiz", "exam", "reading", "listening", "speaking", "writing", "dictation", "sentence-builder", "tone-trainer", "shadowing", "roleplay", "ai"];
 
-function sourceLabel(source: "all" | MistakeSource, language: "uz" | "ru") {
+function sourceLabel(source: "all" | MistakeSource, language: AppLanguage) {
   const uz: Record<string, string> = {
     all: "Barchasi",
     quiz: "Test",
@@ -41,7 +41,24 @@ function sourceLabel(source: "all" | MistakeSource, language: "uz" | "ru") {
     roleplay: "Ситуации",
     ai: "AI"
   };
-  return language === "ru" ? ru[source] ?? source : uz[source] ?? source;
+  const en: Record<string, string> = {
+    all: "All",
+    quiz: "Quiz",
+    exam: "Exam",
+    reading: "Reading",
+    listening: "Listening",
+    speaking: "Speaking",
+    writing: "Writing",
+    dictation: "Dictation",
+    "sentence-builder": "Sentences",
+    "tone-trainer": "Tones",
+    shadowing: "Shadowing",
+    roleplay: "Roleplay",
+    ai: "AI"
+  };
+  if (language === "ru") return ru[source] ?? source;
+  if (language === "en") return en[source] ?? source;
+  return uz[source] ?? source;
 }
 
 function practiceHref(mistake: MistakeRecord) {

@@ -153,10 +153,23 @@ export default function QuizPage() {
           </div>
           {selected ? (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-7 flex flex-col justify-between gap-4 rounded-4xl bg-cream p-4 shadow-soft sm:flex-row sm:items-center">
-              <p className="font-black text-ink">
-                {selected === question.correctOptionId ? t("quiz.correct") : `${t("quiz.correct")}: ${language === "ru" ? correctOption?.textRu : correctOption?.textUz}`}
-                <span className="mt-2 block text-sm font-semibold text-stone-600">{language === "ru" ? question.explanationRu : question.explanationUz}</span>
-              </p>
+              <div className="font-black text-ink">
+                <p className={selected === question.correctOptionId ? "text-emerald-700" : "text-rose-700"}>
+                  {selected === question.correctOptionId
+                    ? language === "ru" ? "Верно" : "To‘g‘ri"
+                    : language === "ru" ? "Неверно" : "Noto‘g‘ri"}
+                </p>
+                {selected !== question.correctOptionId ? (
+                  <p className="mt-2 text-sm text-orange-deep">
+                    {language === "ru" ? "Правильный ответ" : "To‘g‘ri javob"}: {language === "ru" ? correctOption?.textRu : correctOption?.textUz}
+                  </p>
+                ) : null}
+                <p className="mt-2 text-xs font-black uppercase text-stone-500">{language === "ru" ? "Объяснение" : "Izoh"}</p>
+                <p className="mt-1 text-sm font-semibold leading-6 text-stone-600">{language === "ru" ? question.explanationRu : question.explanationUz}</p>
+                {selected !== question.correctOptionId ? (
+                  <p className="mt-2 text-xs font-bold text-stone-500">{language === "ru" ? "Ошибка добавлена в повторение." : "Xato takrorlashga qo‘shildi."}</p>
+                ) : null}
+              </div>
               <button onClick={next} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-brand to-orange-hot px-5 py-3 text-sm font-black text-white shadow-card">
                 {t("common.next")} <ArrowRight className="h-4 w-4" />
               </button>

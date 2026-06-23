@@ -15,7 +15,12 @@ const listeningTemplates = [
     hintUz: "Bir kishi bugungi o‘qishi haqida gapiryapti.",
     hintRu: "Один человек говорит о сегодняшней учёбе.",
     answerUz: "u bugun o‘qiydi va takrorlaydi",
-    answerRu: "он сегодня учится и повторяет"
+    answerRu: "он сегодня учится и повторяет",
+    distractors: [
+      ["u bugun xarid qiladi", "он сегодня делает покупки"],
+      ["u bugun shifokorga boradi", "он сегодня идёт к врачу"],
+      ["u bugun televizor sotadi", "он сегодня продаёт телевизор"]
+    ]
   },
   {
     tag: "dialogue",
@@ -28,7 +33,12 @@ const listeningTemplates = [
     hintUz: "Ikki kishi reja haqida gaplashyapti.",
     hintRu: "Два человека говорят о плане.",
     answerUz: "ular birga o‘qishni rejalashtiradi",
-    answerRu: "они планируют учиться вместе"
+    answerRu: "они планируют учиться вместе",
+    distractors: [
+      ["ular uchrashuvni bekor qiladi", "они отменяют встречу"],
+      ["ular restoranda ishlaydi", "они работают в ресторане"],
+      ["ular aeroportga kechikadi", "они опаздывают в аэропорт"]
+    ]
   },
   {
     tag: "question-answer",
@@ -41,7 +51,12 @@ const listeningTemplates = [
     hintUz: "Talaba qaysi so‘zni yana mashq qilishini tinglang.",
     hintRu: "Послушайте, какое слово студенту нужно повторить.",
     answerUz: "talaba bir so‘zni yana mashq qilishi kerak",
-    answerRu: "студенту нужно ещё потренировать одно слово"
+    answerRu: "студенту нужно ещё потренировать одно слово",
+    distractors: [
+      ["talaba hamma so‘zni unutgan", "студент забыл все слова"],
+      ["o‘qituvchi darsni tugatdi", "учитель закончил урок"],
+      ["talaba savol bermadi", "студент не задавал вопрос"]
+    ]
   },
   {
     tag: "mini-story",
@@ -54,7 +69,12 @@ const listeningTemplates = [
     hintUz: "Qahramon yo‘lda nima qilayotganini tinglang.",
     hintRu: "Послушайте, что герой делает по дороге.",
     answerUz: "yo‘lda audio tinglab mashq qiladi",
-    answerRu: "по дороге слушает аудио и тренируется"
+    answerRu: "по дороге слушает аудио и тренируется",
+    distractors: [
+      ["yo‘lda uxlab qoladi", "по дороге засыпает"],
+      ["yo‘lda ovqat sotib oladi", "по дороге покупает еду"],
+      ["yo‘lda telefonini yo‘qotadi", "по дороге теряет телефон"]
+    ]
   },
   {
     tag: "announcement",
@@ -67,7 +87,12 @@ const listeningTemplates = [
     hintUz: "Vaqt va tayyorgarlik talabini tinglang.",
     hintRu: "Послушайте время и требования к подготовке.",
     answerUz: "soat uchda xitoy tili mashqi bor",
-    answerRu: "в три часа практика китайского"
+    answerRu: "в три часа практика китайского",
+    distractors: [
+      ["ertalab sakkizda sport bor", "в восемь утра спорт"],
+      ["kechqurun kino ko‘rish bor", "вечером просмотр фильма"],
+      ["darslik olib kelish shart emas", "учебник приносить не нужно"]
+    ]
   },
   {
     tag: "exam-style",
@@ -80,7 +105,12 @@ const listeningTemplates = [
     hintUz: "Nima uchun takrorlayotganini tinglang.",
     hintRu: "Послушайте, зачем он повторяет.",
     answerUz: "HSK tayyorgarlik testiga tayyorlanyapti",
-    answerRu: "готовится к тренировочному тесту HSK"
+    answerRu: "готовится к тренировочному тесту HSK",
+    distractors: [
+      ["u ish uchrashuviga tayyorlanyapti", "он готовится к рабочей встрече"],
+      ["u sayohat chiptasini qidiryapti", "он ищет билет для поездки"],
+      ["u xitoycha o‘qishni to‘xtatmoqchi", "он хочет прекратить учить китайский"]
+    ]
   }
 ];
 
@@ -115,8 +145,9 @@ const foundationalListeningContent: HSKListeningPrompt[] = levels.flatMap((level
           questionRu: "Выберите ответ по услышанному тексту.",
           correctUz: template.answerUz,
           correctRu: template.answerRu,
-          explanationUz: "Javob audiodagi asosiy mazmunga mos.",
-          explanationRu: "Ответ соответствует главному смыслу аудио."
+          explanationUz: `Audio mazmuni “${template.answerUz}” degan fikrni beradi. Noto‘g‘ri variantlar audiodagi vaqt, harakat yoki maqsadga mos emas.`,
+          explanationRu: `Смысл аудио: «${template.answerRu}». Неверные варианты не совпадают с временем, действием или целью в аудио.`,
+          distractors: template.distractors.map(([uz, ru]) => ({ uz, ru }))
         })
       ],
       replayLimit: index % 2 === 0 ? 2 : 3,

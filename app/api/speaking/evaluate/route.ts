@@ -19,7 +19,7 @@ type RequestBody = {
 const evaluationCache = new Map<string, ReturnType<typeof fallbackResult>>();
 
 function localeOf(value: unknown): AppLanguage {
-  return value === "ru" ? "ru" : "uz";
+  return value === "ru" || value === "en" ? value : "uz";
 }
 
 function levelOf(value: unknown): HSKLevel {

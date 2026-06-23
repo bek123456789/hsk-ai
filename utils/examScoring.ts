@@ -1,4 +1,4 @@
-import type { ExamSectionResult, ExamSkill, HSKLevel } from "@/types";
+import type { AppLanguage, ExamSectionResult, ExamSkill, HSKLevel } from "@/types";
 import type { ExamSpeakingPrompt } from "@/data/hsk/examSpeakingPrompts";
 import type { ExamWritingPrompt } from "@/data/hsk/examWritingPrompts";
 import { getCurriculumLessonsByLevel, type LessonSkillFocus } from "@/data/hsk/lessonCurriculum";
@@ -53,12 +53,12 @@ export function scoreWritingAnswer(prompt: ExamWritingPrompt, answer: string) {
   }).score;
 }
 
-export function scoreOpenSection(scores: number[], locale: "uz" | "ru", skill: "speaking" | "writing"): ExamSectionResult {
+export function scoreOpenSection(scores: number[], locale: AppLanguage, skill: "speaking" | "writing"): ExamSectionResult {
   const score = scores.length ? Math.round(scores.reduce((sum, item) => sum + item, 0) / scores.length) : 0;
   const passedItems = scores.filter((item) => item >= 60).length;
   const label = skill === "speaking"
-    ? locale === "ru" ? "говорения" : "gapirish"
-    : locale === "ru" ? "письма" : "yozish";
+    ? locale === "ru" ? "говорения" : locale === "en" ? "speaking" : "gapirish"
+    : locale === "ru" ? "письма" : locale === "en" ? "writing" : "yozish";
   return {
     score,
     correct: passedItems,

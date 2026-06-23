@@ -79,6 +79,17 @@ export function getUsageTypeLabel(usageType: AIUsageType, language: AppLanguage)
       ai_lesson_explainer: "Объяснение урока",
       speaking_meaning_check: "AI-проверка говорения",
       ai_voice_conversation: "Голосовой диалог с AI"
+    },
+    en: {
+      ai_tutor_message: "AI Coach questions",
+      ai_mistake_analysis: "Mistake analysis",
+      pronunciation_check: "Pronunciation check",
+      ai_exam_coach: "Exam coach",
+      ai_conversation: "AI conversation",
+      ai_roleplay: "Roleplay",
+      ai_lesson_explainer: "Lesson explanation",
+      speaking_meaning_check: "AI speaking check",
+      ai_voice_conversation: "Voice AI conversation"
     }
   };
 
@@ -86,6 +97,12 @@ export function getUsageTypeLabel(usageType: AIUsageType, language: AppLanguage)
 }
 
 export function getUsageLimitMessage(language: AppLanguage) {
+  if (language === "en") {
+    return {
+      title: "Your daily AI limit is used",
+      detail: "Premium includes more AI requests. Try again tomorrow, or use bonus AI tokens if you have them."
+    };
+  }
   return language === "ru"
     ? {
         title: "Ваш дневной лимит AI закончился",
