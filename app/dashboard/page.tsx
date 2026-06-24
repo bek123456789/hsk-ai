@@ -63,14 +63,12 @@ type DailyTask = LocalizedText & {
 };
 
 const quickActions: QuickAction[] = [
-  { href: "/learning-path", uz: "O‘quv yo‘li", ru: "Учебный путь", en: "Learning Path", icon: Map, tone: "bg-orange-50 text-orange-700" },
-  { href: "/review", uz: "Aqlli takrorlash", ru: "Умное повторение", en: "Smart Review", icon: RotateCcw, tone: "bg-skysoft text-sky-700" },
-  { href: "/tone-trainer", uz: "Tonlar", ru: "Тоны", en: "Tones", icon: Headphones, tone: "bg-violet-50 text-violet-700" },
-  { href: "/hanzi-builder", uz: "Hanzi Builder", ru: "Hanzi Builder", en: "Hanzi Builder", icon: NotebookTabs, tone: "bg-orange-soft text-orange-deep" },
-  { href: "/sentence-builder", uz: "Gaplar", ru: "Предложения", en: "Sentences", icon: Brain, tone: "bg-emerald-50 text-emerald-700" },
-  { href: "/roleplay", uz: "Vaziyatlar", ru: "Ситуации", en: "Roleplay", icon: Mic, tone: "bg-rose-50 text-rose-700" },
-  { href: "/sprint", uz: "HSK Sprint", ru: "HSK Sprint", en: "HSK Sprint", icon: Flame, tone: "bg-amber-100 text-amber-700" },
-  { href: "/exam", uz: "Tayyorlik", ru: "Готовность", en: "Readiness", icon: Trophy, tone: "bg-orange-50 text-orange-700" }
+  { href: "/mastery", uz: "AI HSK Ustoz", ru: "AI HSK Ustoz", en: "AI HSK Ustoz", icon: Bot, tone: "bg-orange-soft text-orange-deep" },
+  { href: "/homework", uz: "Uy vazifasi", ru: "Uy vazifasi", en: "Uy vazifasi", icon: GraduationCap, tone: "bg-skysoft text-sky-700" },
+  { href: "/review", uz: "Aqlli takrorlash", ru: "Aqlli takrorlash", en: "Aqlli takrorlash", icon: RotateCcw, tone: "bg-violet-50 text-violet-700" },
+  { href: "/exam", uz: "HSK tayyorlik", ru: "HSK tayyorlik", en: "HSK tayyorlik", icon: Trophy, tone: "bg-orange-50 text-orange-700" },
+  { href: "/learning-path", uz: "HSK yo‘l xaritasi", ru: "HSK yo‘l xaritasi", en: "HSK yo‘l xaritasi", icon: Map, tone: "bg-amber-100 text-amber-700" },
+  { href: "/practice", uz: "Mashq vositalari", ru: "Mashq vositalari", en: "Mashq vositalari", icon: Brain, tone: "bg-emerald-50 text-emerald-700" }
 ];
 
 function localizedText(item: LocalizedText, language: AppLanguage) {
@@ -437,7 +435,7 @@ export default function DashboardPage() {
               eyebrow={language === "ru" ? "Быстрый доступ" : "Tezkor kirish"}
               title={language === "ru" ? "Выберите навык" : "Ko‘nikmani tanlang"}
             />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
               {quickActions.map((action) => (
                 <QuickActionCard key={action.href} action={action} language={language} level={currentLevel} />
               ))}

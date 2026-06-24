@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, BadgeCheck, BookOpen, Clock3, Headphones, Mic, PenLine, RotateCcw, Target, Trophy } from "lucide-react";
+import { ArrowRight, BadgeCheck, BookOpen, Bot, Clock3, Headphones, Mic, PenLine, RotateCcw, Target, Trophy } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import { AppButton } from "@/components/AppButton";
 import { Card } from "@/components/Card";
@@ -149,6 +149,23 @@ export default function ExamResultPage() {
                   : language === "ru" ? "Вы успешно завершили всю учебную траекторию." : "Siz barcha o‘quv bosqichlarini muvaffaqiyatli yakunladingiz."
                 : language === "ru" ? "Повторите слабые разделы и пересдайте экзамен. Требуется 80% или выше." : "Zaif bo‘limlarni takrorlab, imtihonni qayta topshiring. 80% yoki yuqori ball talab qilinadi."}
             </p>
+          </div>
+
+          <div className="mt-7 rounded-[1.8rem] border border-orange-soft bg-gradient-to-br from-white via-cream to-orange-soft/40 p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-soft text-orange-deep">
+                  <Bot className="h-6 w-6" />
+                </span>
+                <div>
+                  <h2 className="text-2xl font-black text-ink">AI HSK Ustoz tahlili</h2>
+                  <p className="mt-2 text-sm font-semibold leading-7 text-stone-600">
+                    Imtihon natijangiz, zaif bo‘limlar va xatolaringiz asosida pass uchun keyingi qadamlarni ko‘ring.
+                  </p>
+                </div>
+              </div>
+              <AppButton href="/mastery" className="shrink-0">Tahlilni ochish <ArrowRight className="h-4 w-4" /></AppButton>
+            </div>
           </div>
 
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">

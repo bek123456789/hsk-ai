@@ -542,6 +542,9 @@ export function ClosedBetaLanding() {
             <p className="mt-3 max-w-lg text-sm font-semibold leading-6 text-stone-600">
               {copy(language, "Xitoy tili va HSK tayyorgarlik platformasi.", "Платформа для изучения китайского и подготовки к HSK.", "Chinese learning and HSK preparation platform.")}
             </p>
+            <p className="mt-2 max-w-xl text-xs font-bold leading-5 text-stone-500">
+              HanziFlow AI rasmiy HSK tashkiloti mahsuloti emas. Bu HSK tayyorgarlik platformasi.
+            </p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm font-black text-stone-600">
             {[

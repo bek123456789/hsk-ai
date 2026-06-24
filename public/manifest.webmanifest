@@ -1,7 +1,7 @@
 {
   "name": "HanziFlow AI",
   "short_name": "HanziFlow",
-  "description": "Xitoy tilini AI yordamchi va HSK tayyorgarlik mashqlari orqali o‘rganish platformasi.",
+  "description": "Uzbek o‘quvchilar uchun AI yordamida xitoy tili, HSK darslari, diktant va xatodan o‘rganish platformasi.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#FFF7ED",

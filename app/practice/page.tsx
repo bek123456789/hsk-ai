@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenCheck, Bot, ClipboardList, Flame, GraduationCap, Headphones, Keyboard, MessageCircle, Mic, NotebookTabs, RefreshCw, RefreshCcw, Sparkles, Timer, Trophy, WholeWord } from "lucide-react";
+import { BookOpenCheck, Bot, Brain, ClipboardList, Flame, GraduationCap, Headphones, Keyboard, MessageCircle, Mic, NotebookTabs, RefreshCw, RefreshCcw, Sparkles, Timer, Trophy, WholeWord } from "lucide-react";
 import { AppButton } from "@/components/AppButton";
 import { Card } from "@/components/Card";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -31,6 +31,64 @@ function localizedDetail(item: LocalizedCardText, language: AppLanguage) {
 export default function PracticeHubPage() {
   const { language } = useI18n();
   const sections = [
+    {
+      titleUz: "AI HSK Ustoz",
+      titleRu: "AI HSK Ustoz",
+      titleEn: "AI HSK Ustoz",
+      cards: [
+        { href: "/mastery", icon: Bot, titleUz: "Shaxsiy HSK Yo‘l", titleRu: "Shaxsiy HSK Yo‘l", titleEn: "Shaxsiy HSK Yo‘l", detailUz: "Zaif joylaringizni topib, bugungi eng foydali qadamni ko‘ring.", detailRu: "Zaif joylaringizni topib, bugungi eng foydali qadamni ko‘ring.", detailEn: "Zaif joylaringizni topib, bugungi eng foydali qadamni ko‘ring." },
+        { href: "/mastery", icon: RefreshCcw, titleUz: "Xatodan o‘rganish", titleRu: "Xatodan o‘rganish", titleEn: "Xatodan o‘rganish", detailUz: "Xato sababini ko‘ring va shu xatoni tuzatish uchun 3 ta drill oling.", detailRu: "Xato sababini ko‘ring va shu xatoni tuzatish uchun 3 ta drill oling.", detailEn: "Xato sababini ko‘ring va shu xatoni tuzatish uchun 3 ta drill oling." }
+      ]
+    },
+    {
+      titleUz: "O‘rganish",
+      titleRu: "O‘rganish",
+      titleEn: "O‘rganish",
+      cards: [
+        { href: "/topics", icon: BookOpenCheck, titleUz: "Mavzular", titleRu: "Mavzular", titleEn: "Mavzular", detailUz: "Tanishuv, oila, maktab, ovqat, do‘kon va boshqa HSK mavzularini paket qilib o‘rganing.", detailRu: "Tanishuv, oila, maktab, ovqat, do‘kon va boshqa HSK mavzularini paket qilib o‘rganing.", detailEn: "Tanishuv, oila, maktab, ovqat, do‘kon va boshqa HSK mavzularini paket qilib o‘rganing." },
+        { href: "/stories", icon: BookOpenCheck, titleUz: "Hikoyalar", titleRu: "Hikoyalar", titleEn: "Hikoyalar", detailUz: "HSK darajangizga mos qisqa hikoyalarni audio, pinyin va savollar bilan o‘qing.", detailRu: "HSK darajangizga mos qisqa hikoyalarni audio, pinyin va savollar bilan o‘qing.", detailEn: "HSK darajangizga mos qisqa hikoyalarni audio, pinyin va savollar bilan o‘qing." },
+        { href: "/word-family", icon: NotebookTabs, titleUz: "So‘z oilasi", titleRu: "So‘z oilasi", titleEn: "So‘z oilasi", detailUz: "Bitta hanzi atrofidagi o‘xshash so‘zlar, misollar va ma’nolarni ko‘ring.", detailRu: "Bitta hanzi atrofidagi o‘xshash so‘zlar, misollar va ma’nolarni ko‘ring.", detailEn: "Bitta hanzi atrofidagi o‘xshash so‘zlar, misollar va ma’nolarni ko‘ring." },
+        { href: "/grammar-playground", icon: Brain, titleUz: "Grammatika laboratoriyasi", titleRu: "Grammatika laboratoriyasi", titleEn: "Grammatika laboratoriyasi", detailUz: "Gapni savolga yoki inkor gapga aylantirib, xitoycha struktura bilan ishlang.", detailRu: "Gapni savolga yoki inkor gapga aylantirib, xitoycha struktura bilan ishlang.", detailEn: "Gapni savolga yoki inkor gapga aylantirib, xitoycha struktura bilan ishlang." }
+      ]
+    },
+    {
+      titleUz: "Mashq",
+      titleRu: "Mashq",
+      titleEn: "Mashq",
+      cards: [
+        { href: "/pronunciation-coach", icon: Mic, titleUz: "Talaffuz murabbiyi", titleRu: "Talaffuz murabbiyi", titleEn: "Talaffuz murabbiyi", detailUz: "Xitoycha gapni eshiting, takrorlang va yetishmagan so‘zlar bo‘yicha feedback oling.", detailRu: "Xitoycha gapni eshiting, takrorlang va yetishmagan so‘zlar bo‘yicha feedback oling.", detailEn: "Xitoycha gapni eshiting, takrorlang va yetishmagan so‘zlar bo‘yicha feedback oling." },
+        { href: "/tone-battle", icon: Headphones, titleUz: "Ton jangi", titleRu: "Ton jangi", titleEn: "Ton jangi", detailUz: "O‘xshash pinyin tonlarini tez farqlang va xato tonlarni qayta mashq qiling.", detailRu: "O‘xshash pinyin tonlarini tez farqlang va xato tonlarni qayta mashq qiling.", detailEn: "O‘xshash pinyin tonlarini tez farqlang va xato tonlarni qayta mashq qiling." },
+        { href: "/reading-trainer", icon: BookOpenCheck, titleUz: "O‘qish murabbiyi", titleRu: "O‘qish murabbiyi", titleEn: "O‘qish murabbiyi", detailUz: "Matndan kalit so‘z, dalil gap va javob clue sini topishni mashq qiling.", detailRu: "Matndan kalit so‘z, dalil gap va javob clue sini topishni mashq qiling.", detailEn: "Matndan kalit so‘z, dalil gap va javob clue sini topishni mashq qiling." },
+        { href: "/offline-pack", icon: ClipboardList, titleUz: "Offline mashq paketi", titleRu: "Offline mashq paketi", titleEn: "Offline mashq paketi", detailUz: "Bugungi so‘z, grammar, listening, reading va quiz paketini saqlang.", detailRu: "Bugungi so‘z, grammar, listening, reading va quiz paketini saqlang.", detailEn: "Bugungi so‘z, grammar, listening, reading va quiz paketini saqlang." }
+      ]
+    },
+    {
+      titleUz: "Xatolar",
+      titleRu: "Xatolar",
+      titleEn: "Xatolar",
+      cards: [
+        { href: "/weakness-map", icon: Trophy, titleUz: "Zaif joylar xaritasi", titleRu: "Zaif joylar xaritasi", titleEn: "Zaif joylar xaritasi", detailUz: "Vocabulary, pinyin, tones, grammar va ko‘nikmalar bo‘yicha heatmap ko‘ring.", detailRu: "Vocabulary, pinyin, tones, grammar va ko‘nikmalar bo‘yicha heatmap ko‘ring.", detailEn: "Vocabulary, pinyin, tones, grammar va ko‘nikmalar bo‘yicha heatmap ko‘ring." },
+        { href: "/error-replay", icon: RefreshCcw, titleUz: "Xatolar replay", titleRu: "Xatolar replay", titleEn: "Xatolar replay", detailUz: "So‘nggi xatolarni sababiga ko‘ra replay darsga aylantiring.", detailRu: "So‘nggi xatolarni sababiga ko‘ra replay darsga aylantiring.", detailEn: "So‘nggi xatolarni sababiga ko‘ra replay darsga aylantiring." }
+      ]
+    },
+    {
+      titleUz: "Maqsad va progress",
+      titleRu: "Maqsad va progress",
+      titleEn: "Maqsad va progress",
+      cards: [
+        { href: "/goals", icon: Trophy, titleUz: "Maqsadlar", titleRu: "Maqsadlar", titleEn: "Maqsadlar", detailUz: "HSK maqsadi, muddat va bugungi kerakli progressni kuzating.", detailRu: "HSK maqsadi, muddat va bugungi kerakli progressni kuzating.", detailEn: "HSK maqsadi, muddat va bugungi kerakli progressni kuzating." },
+        { href: "/homework", icon: ClipboardList, titleUz: "Bugungi uy vazifasi", titleRu: "Bugungi uy vazifasi", titleEn: "Bugungi uy vazifasi", detailUz: "Zaif joylar va HSK darajangizga mos 15 daqiqalik reja.", detailRu: "Zaif joylar va HSK darajangizga mos 15 daqiqalik reja.", detailEn: "Zaif joylar va HSK darajangizga mos 15 daqiqalik reja." },
+        { href: "/mentor-report", icon: GraduationCap, titleUz: "Mentor hisoboti", titleRu: "Mentor hisoboti", titleEn: "Mentor hisoboti", detailUz: "Ota-ona yoki ustoz uchun progress va yordam kerak bo‘lgan joylar.", detailRu: "Ota-ona yoki ustoz uchun progress va yordam kerak bo‘lgan joylar.", detailEn: "Ota-ona yoki ustoz uchun progress va yordam kerak bo‘lgan joylar." }
+      ]
+    },
+    {
+      titleUz: "Challenge",
+      titleRu: "Challenge",
+      titleEn: "Challenge",
+      cards: [
+        { href: "/boss-battle", icon: Flame, titleUz: "HSK Boss Battle", titleRu: "HSK Boss Battle", titleEn: "HSK Boss Battle", detailUz: "Aralash savollar bilan boss HPsini kamaytiring. Badge beradi, exam unlock emas.", detailRu: "Aralash savollar bilan boss HPsini kamaytiring. Badge beradi, exam unlock emas.", detailEn: "Aralash savollar bilan boss HPsini kamaytiring. Badge beradi, exam unlock emas." }
+      ]
+    },
     {
       titleUz: "So‘zlar",
       titleRu: "Слова",

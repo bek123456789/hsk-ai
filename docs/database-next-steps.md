@@ -493,3 +493,28 @@ using (auth.uid() = user_id);
 Login paytida `utils/supabaseProgressSync.ts` Supabase’dagi natijalarni LocalStorage bilan xavfsiz birlashtiradi. Jadval mavjud bo‘lmasa `hsk_lesson_progress`, `hsk_learning_progress`, `hsk_reading_progress`, `hsk_listening_progress` va `hsk_speaking_progress` LocalStorage kalitlari ishlashda davom etadi.
 
 `quiz_score` va `quiz_total` mini test natijasini alohida saqlaydi. Umumiy dars progressi section-based hisoblanadi: `vocabulary`, `grammar`, `reading`, `listening`, `speaking`, `miniTest` tugallansa `progress = 100`, `done = true`, `completed = true` bo‘ladi. Mini test 60% yoki undan yuqori bo‘lsa `miniTest` bo‘limi tugallangan hisoblanadi; mini test foizi umumiy progressni 95% kabi oraliqda ushlab qolmasligi kerak.
+
+## Advanced Learning Optional Tables
+
+Quyidagi jadvallar yangi premium learning funksiyalar natijalarini cross-device saqlash uchun optional. App avval LocalStoragega yozadi va jadval bo‘lmasa crash qilmaydi.
+
+```sql
+create table if not exists public.pronunciation_results (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.tone_battle_results (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.word_family_progress (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.topic_progress (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.story_progress (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.grammar_playground_results (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.dictation_results (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.reading_trainer_results (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.weakness_map_cache (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.boss_battle_results (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.error_replay_sessions (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.homework_tasks (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.homework_results (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.offline_pack_results (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.mentor_reports (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+create table if not exists public.hsk_goals (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, payload jsonb not null, created_at timestamptz default now());
+```
+
+Har bir jadvalda RLS yoqing va `auth.uid() = user_id` select/insert/update/delete policylarini qo‘llang. `boss_battle_results` motivatsion challenge uchun ishlatiladi; u HSK daraja unlock logikasini almashtirmaydi.

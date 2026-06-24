@@ -169,6 +169,18 @@ export default function ReviewPage() {
           </AppButton>
         </div>
 
+        <div className="mb-6 rounded-[1.8rem] border border-orange-soft/70 bg-white/88 p-5 shadow-soft">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase tracking-normal text-orange-deep">Bu so‘zlar nega qaytmoqda?</p>
+              <p className="mt-1 text-sm font-bold leading-6 text-stone-600">
+                Zaif, xato qilingan yoki bugun takrorlash vaqti kelgan so‘zlar navbatga chiqadi. Qiyin deb belgilangan so‘z ertaga yana qaytadi.
+              </p>
+            </div>
+            <AppButton href="/mastery" variant="secondary" className="shrink-0">AI HSK Ustoz</AppButton>
+          </div>
+        </div>
+
         {reviewWord && reviewItem ? (
           <div className="mb-8 rounded-[2rem] border border-orange-soft/70 bg-gradient-to-br from-white via-cream to-orange-soft/40 p-6 text-center shadow-premium sm:p-9">
             <div className="flex flex-wrap items-center justify-center gap-2">

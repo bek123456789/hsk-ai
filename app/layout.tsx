@@ -14,10 +14,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://hsk-ai-one.vercel.app"),
   title: {
-    default: "HanziFlow AI — Xitoy tilini HSK bo‘yicha o‘rganing",
+    default: "HanziFlow AI — Uzbek tilida Xitoy tili va HSK tayyorgarlik",
     template: "%s | HanziFlow AI"
   },
-  description: "Xitoy tilini AI yordamchi, HSK darslari, tinglash, gapirish, o‘qish va imtihon mashqlari orqali o‘rganing.",
+  description: "Uzbek o‘quvchilar uchun AI yordamida xitoy tili, HSK darslari, listening, speaking, writing, diktant va xatodan o‘rganish platformasi.",
   applicationName: "HanziFlow AI",
   manifest: "/manifest.webmanifest",
   icons: {
@@ -27,10 +27,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "uz_UZ",
-    alternateLocale: ["ru_RU"],
     siteName: "HanziFlow AI",
-    title: "HanziFlow AI — Xitoy tilini HSK bo‘yicha o‘rganing",
-    description: "HanziFlow AI — Xitoy tili va HSK tayyorgarlik platformasi.",
+    title: "HanziFlow AI — Uzbek tilida Xitoy tili va HSK tayyorgarlik",
+    description: "AI yordamida HSK darslari, diktant, speaking, writing, smart review va xatodan o‘rganish platformasi.",
     url: "/",
     images: [
       {
@@ -43,8 +42,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "HanziFlow AI",
-    description: "AI yordamchi, darslar, tinglash, gapirish va imtihon tayyorgarligi bir joyda."
+    title: "HanziFlow AI — Uzbek tilida Xitoy tili va HSK tayyorgarlik",
+    description: "Uzbek o‘quvchilar uchun AI yordamida xitoy tili va HSK tayyorgarlik platformasi."
   },
   appleWebApp: {
     capable: true,

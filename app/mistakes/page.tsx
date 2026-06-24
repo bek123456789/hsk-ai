@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, BookOpenCheck, Filter, Plus, RotateCcw } from "lucide-react";
+import { AlertTriangle, BookOpenCheck, Bot, Filter, Plus, RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AppButton } from "@/components/AppButton";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -164,6 +164,7 @@ export default function MistakesPage() {
                 </div>
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                   <AppButton href={practiceHref(mistake)} variant="secondary"><RotateCcw className="h-5 w-5" /> {language === "ru" ? "Исправить сейчас" : "Hozir tuzatish"}</AppButton>
+                  <AppButton href={`/mastery?mistake=${mistake.id}`} variant="secondary"><Bot className="h-5 w-5" /> AI bilan xatoni tuzatish</AppButton>
                   <button
                     disabled={!mistake.wordId}
                     onClick={() => mistake.wordId ? markWeak(mistake.wordId) : undefined}
